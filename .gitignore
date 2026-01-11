@@ -3,3 +3,4 @@
 **condor_jobs/
 **rootfiles/
 special_start.sh
+productions/*/fileset.json

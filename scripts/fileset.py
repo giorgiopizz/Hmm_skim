@@ -7,6 +7,8 @@ import json
 from utils.utils import get_fw_path
 import sys
 
+max_cores = 2
+
 
 def fileset(files):
     url = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
@@ -31,7 +33,7 @@ def fileset(files):
         xrootd_sites_map=xrootd_sites_map,
     )
     _files = {k: v for k, v in files.items() if "query" in v}
-    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as pool:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=max_cores) as pool:
         tasks = []
         for dname in _files:
             dataset = _files[dname]["query"]
@@ -50,7 +52,7 @@ def fileset(files):
             event_count_map = {
                 k["logical_file_name"]: k["event_count"] for k in filelist
             }
-            print(event_count_map)
+            # print(event_count_map)
 
             result = []
             for replicas, _ in zip(outfiles, outsites):
@@ -88,10 +90,12 @@ if __name__ == "__main__":
             if key == "nanoAOD":
                 files[sample]["query"] = Samples[sample][key]
 
+    print("Generating fileset for production in folder:", prod_folder)
+    print(f"Using {max_cores} cores, this may take a up to 10 minutes")
     files = fileset(files)
     for key in files:
         if len(files[key]["files"]) == 0:
             print(f"Warning: no files found for sample {key}")
-    print(files)
+    # print(files)
     with open(f"{prod_folder}fileset.json", "w") as f:
         json.dump(files, f, indent=2)
