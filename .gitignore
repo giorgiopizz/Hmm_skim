@@ -1,0 +1,4 @@
+.sites_map.json
+**__pycache__/
+**condor_jobs/
+**rootfiles/
