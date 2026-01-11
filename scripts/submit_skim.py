@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import subprocess
 import ROOT
 import os
 import argparse
@@ -10,6 +11,7 @@ import json
 ROOT.gROOT.SetBatch(True)
 
 base_output_folder = get_fw_path() + "/rootfiles/"
+base_output_folder = "/eos/user/g/gpizzati/hmm_skim/"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -66,7 +68,7 @@ if __name__ == "__main__":
             nevents_per_chunk = 5_000_000
         datasets_files[dataset] = merge_files(
             fileset_data[dataset]["files"][:], nevents_per_chunk
-        )[:]
+        )[:3]  # FIXME
 
         if "Muon0" in dataset or "Muon1" in dataset:
             is_datas[dataset] = True
@@ -77,14 +79,35 @@ if __name__ == "__main__":
     condor_folder = f"{fw_path}/condor_jobs/"
     os.makedirs(condor_folder, exist_ok=True)
 
+    cmd = f"cp -r {fw_path}/data {condor_folder}/."
+    proc = subprocess.run(cmd, shell=True)
+    if proc.returncode != 0:
+        raise Exception("Failed to copy data folder")
+
+    cmd = f"cp {fw_path}/utils/run.sh {condor_folder}/."
+    proc = subprocess.run(cmd, shell=True)
+    if proc.returncode != 0:
+        raise Exception("Failed to copy run.sh")
+
+    cmd = f"cp {fw_path}/utils/runner.py {condor_folder}/."
+    proc = subprocess.run(cmd, shell=True)
+    if proc.returncode != 0:
+        raise Exception("Failed to copy runner.py")
+
+    cmd = f"cp {os.environ['X509_USER_PROXY']} {condor_folder}/my_cert"
+    proc = subprocess.run(cmd, shell=True)
+    if proc.returncode != 0:
+        raise Exception("Failed to copy proxy certificate")
+
     jobs_mapped = {}
     for ds in datasets_files:
         for ifile, file in enumerate(datasets_files[ds]):
             os.makedirs(f"{condor_folder}/job_{ijob}", exist_ok=True)
+            outfile = f"{results_folder}/{ds}_skimmed_{ifile}.root"
             jobs_mapped[ijob] = {
                 "dataset": ds,
                 "ifile": ifile,
-                "outfile": f"{results_folder}/{ds}_skimmed_{ifile}.root",
+                "outfile": outfile,
                 "is_data": is_datas[ds],
             }
             with open(f"{condor_folder}/job_{ijob}/input.json", "w") as f:
@@ -92,7 +115,7 @@ if __name__ == "__main__":
                     {
                         "dataset": ds,
                         "file": file,
-                        "outfile": f"{results_folder}/{ds}_skimmed_{ifile}.root",
+                        "outfile": outfile,
                         "is_data": is_datas[ds],
                     },
                     f,
@@ -101,6 +124,19 @@ if __name__ == "__main__":
 
             ijob += 1
     print(f"Total jobs: {ijob}")
+
     with open(f"{condor_folder}/jobs_mapped.json", "w") as f:
         json.dump(jobs_mapped, f, indent=2)
-    exit(1)
+
+    with open(f"{fw_path}/utils/submit.jdl", "r") as f:
+        submit_jdl_content = f.read()
+
+    submit_jdl_content = submit_jdl_content.replace(
+        "RPLME_JOBS", " ".join([f"job_{i}" for i in range(ijob)])
+    )
+
+    # FIXME
+    # submit_jdl_content = submit_jdl_content.replace("RPLME_JOBS", "job_217")
+
+    with open(f"{condor_folder}/submit.jdl", "w") as f:
+        f.write(submit_jdl_content)

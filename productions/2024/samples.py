@@ -222,6 +222,9 @@ Samples["TbarWplusto4Q"] = {
     "nanoAOD": "/TbarWplusto4Q_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
 }
 
+Samples["EWK_2L2J_madgraph_herwig"] = {
+    "nanoAOD": "/EWK-2L2J_Bin-MLL-50-MJJ-120_TuneCH3_13p6TeV_madgraph-herwig7/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+}
 
 ## Signal samples
 

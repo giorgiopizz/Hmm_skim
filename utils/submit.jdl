@@ -1,0 +1,20 @@
+universe = vanilla
+executable = run.sh
+arguments = $(Folder)
+
+should_transfer_files = YES
+transfer_input_files = runner.py, data, $(Folder)/input.json, my_cert
+transfer_output_files = output.json
+transfer_output_remaps = "output.json = $(Folder)/output.json"
+
+output = $(Folder)/out.txt
+error = $(Folder)/err.txt
+log = $(Folder)/log.txt
+
+request_cpus = 1
+request_memory = 4 GB
+request_disk = 6 GB
+
++JobFlavour = "tomorrow"
+
+queue 1 Folder in RPLME_JOBS

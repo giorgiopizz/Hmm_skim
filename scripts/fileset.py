@@ -31,7 +31,7 @@ def fileset(files):
         xrootd_sites_map=xrootd_sites_map,
     )
     _files = {k: v for k, v in files.items() if "query" in v}
-    with concurrent.futures.ProcessPoolExecutor(max_workers=20) as pool:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4) as pool:
         tasks = []
         for dname in _files:
             dataset = _files[dname]["query"]

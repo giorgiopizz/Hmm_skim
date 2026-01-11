@@ -3,36 +3,39 @@ import time
 
 import json
 import correctionlib
+import subprocess
+import os
 
 correctionlib.register_pyroot_binding()
 
 ROOT.gROOT.SetBatch(True)
 
-ROOT.EnableImplicitMT(True)
+# ROOT.EnableImplicitMT(True)
 
-data_folder = '../data/'
 
-line = """
-#include "DATAFOLDER/trig_match.cpp"
-#include "DATAFOLDER/lumi.h"
+def load_cpp_utils(data_folder):
+    line = """
+    #include "DATAFOLDER/trig_match.cpp"
+    #include "DATAFOLDER/lumi.h"
 
-auto cset = correction::CorrectionSet::from_file("FILENAME");
-auto puweight = cset->at("JSONNAME");
+    auto cset = correction::CorrectionSet::from_file("FILENAME");
+    auto puweight = cset->at("JSONNAME");
 
-float getWeight(float Pileup_nTrueInt) {
- return puweight->evaluate({Pileup_nTrueInt, "nominal"});
-}
+    float getWeight(float Pileup_nTrueInt) {
+    return puweight->evaluate({Pileup_nTrueInt, "nominal"});
+    }
 
-auto lumi_filter = LumiFilter("DATAFOLDER/Cert_Collisions2024_378981_386951_Golden.json");
+    auto lumi_filter = LumiFilter("DATAFOLDER/Cert_Collisions2024_378981_386951_Golden.json");
 
-"""
+    """
 
-line = (
-    line.replace("FILENAME", f"{data_folder}/puWeights_BCDEFGHI.json.gz")
-    .replace("JSONNAME", "Collisions24_BCDEFGHI_goldenJSON")
-    .replace("DATAFOLDER", data_folder)
-)
-ROOT.gInterpreter.Declare(line)
+    line = (
+        line.replace("FILENAME", f"{data_folder}/puWeights_BCDEFGHI.json.gz")
+        .replace("JSONNAME", "Collisions24_BCDEFGHI_goldenJSON")
+        .replace("DATAFOLDER", data_folder)
+    )
+    ROOT.gInterpreter.Declare(line)
+
 
 # exit(0)
 
@@ -193,14 +196,32 @@ def process_file(dataset, file, outfile, is_data):
     return {dataset: values}
 
 
-job_folder = "../condor_jobs/job_217"
+data_folder = "data/"
+job_folder = "."
+
+# # FIXME comment
+# data_folder = "../data/"
+# job_folder = "../condor_jobs/job_217/"
 
 with open(f"{job_folder}/input.json") as f:
     data = json.load(f)
 
-result = process_file(
-    data["dataset"], data["file"][:], data["outfile"], data["is_data"]
-)
+out_tmp = data["outfile"]
+if "/eos/" in data["outfile"]:
+    out_tmp = "output.root"
+
+load_cpp_utils(data_folder)
+result = process_file(data["dataset"], data["file"][:], out_tmp, data["is_data"])
+
+if "/eos/" in data["outfile"]:
+    cmd = f"xrdcp {out_tmp} root://eosuser.cern.ch/{data['outfile']}"
+    # run cmd, if any error, remove output.root and raise exception
+    proc = subprocess.run(cmd, shell=True)
+    if proc.returncode != 0:
+        os.remove(out_tmp)
+        raise RuntimeError(f"Failed to copy output file: {cmd}")
+
+os.remove(out_tmp)
 
 with open(f"{job_folder}/output.json", "w") as f:
     json.dump(result, f, indent=2)

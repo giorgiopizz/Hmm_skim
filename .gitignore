@@ -2,3 +2,4 @@
 **__pycache__/
 **condor_jobs/
 **rootfiles/
+special_start.sh
