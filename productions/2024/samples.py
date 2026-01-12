@@ -249,7 +249,7 @@ Samples["ZHto2Mu"] = {
     "nanoAOD": "/ZH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
 }
 
-# ttH
+# FIXME should be TTHto2Mu
 Samples["ttZHto2Mu"] = {
     "nanoAOD": "/TTH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
 }

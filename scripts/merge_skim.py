@@ -1,5 +1,10 @@
+#!/usr/bin/env python3
 import json
 import argparse
+import sys
+
+from scripts.submit_skim import base_output_folder
+
 
 def add_dict(d1, d2):
     if isinstance(d1, dict):
@@ -48,23 +53,43 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     year = args.year
-    
-    
-    results = []
-    for ds in datasets_files:
-        for ifile, file in enumerate(datasets_files[ds]):
 
+    with open("condor_jobs/jobs_mapped.json") as f:
+        jobs_mapped = json.load(f)
+
+    # open each output.json from the jobs
+    jobs_results = []
+    for ijob in jobs_mapped:
+        job_folder = f"condor_jobs/job_{ijob}"
+        with open(f"{job_folder}/output.json") as f:
+            if f.read() == "":
+                print(f"Error: empty output.json in job {ijob}")
+                exit(1)
+            f.seek(0)
+            jobs_results.append(json.load(f))
+
+    jobs_results = add_dict_iterable(jobs_results)
+    print(jobs_results)
+
+    for ds in jobs_results:
+        jobs_results[ds]["is_data"] = 'Muon0' in ds or 'Muon1' in ds
             
-            results.append(result)
 
-    for i in range(len(results)):
-        ds = list(results[i].keys())[0]
-        for key in ["sumw", "nevents_before", "nevents_after"]:
-            results[i][ds][key] = results[i][ds][key]
+    sys.path.insert(0, "productions/")
+    from xs import xs
 
-        for key in ["nevents"]:
-            results[i][ds]["files"][0][key] = results[i][ds]["files"][0][key]
-
-    results = add_dict_iterable(results)
-    with open("skimmed_results.json", "w") as f:
-        json.dump(results, f, indent=2)
+    lumi = 109.98799
+    final_results = {}
+    for dataset in jobs_results:
+        final_results[dataset] = {
+            "nevents_before": jobs_results[dataset]["nevents_before"],
+            "nevents_after": jobs_results[dataset]["nevents_after"],
+        }
+        if jobs_results[dataset]["is_data"]:
+            continue
+        rescale = xs[dataset] * 1000 * lumi / jobs_results[dataset]["sumw"]
+        final_results[dataset]["rescale"] = rescale
+        final_results[dataset]["sumw"] = jobs_results[dataset]["sumw"]
+    with open(f"{base_output_folder}/{year}/results.json", "w") as f:
+        json.dump(final_results, f, indent=2)
+    print(json.dumps(final_results, indent=2))

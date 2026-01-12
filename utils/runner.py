@@ -55,7 +55,7 @@ def process_file(dataset, file, outfile, is_data):
 
     df = df.Define(
         "good_mu",
-        "Muon_pt > 15 && abs(Muon_eta) < 2.4 && Muon_mediumId && Muon_pfIsoId >= 3",
+        "Muon_pt > 15 && abs(Muon_eta) < 2.4 && Muon_mediumId && Muon_pfIsoId >= 2",
     )
     df = df.Filter("Muon_pt[good_mu].size() == 2")
 

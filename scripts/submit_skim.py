@@ -68,7 +68,7 @@ if __name__ == "__main__":
             nevents_per_chunk = 5_000_000
         datasets_files[dataset] = merge_files(
             fileset_data[dataset]["files"][:], nevents_per_chunk
-        )[:3]  # FIXME
+        )[:]  # FIXME
 
         if "Muon0" in dataset or "Muon1" in dataset:
             is_datas[dataset] = True
@@ -77,6 +77,9 @@ if __name__ == "__main__":
 
     ijob = 0
     condor_folder = f"{fw_path}/condor_jobs/"
+    if os.path.exists(condor_folder):
+        subprocess.run(f"rm -rf {condor_folder}", shell=True)
+
     os.makedirs(condor_folder, exist_ok=True)
 
     cmd = f"cp -r {fw_path}/data {condor_folder}/."
