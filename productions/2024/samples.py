@@ -55,56 +55,56 @@ Samples["Muon1_Run2024I_v2"] = {
 
 ## DY samples, probably the only ones we can use for now
 ## for the future DYto2Mu should be jet binned, the others may not
-Samples["DYto2E_M_50_amcatnloFXFX"] = {
-    "nanoAOD": "/DYto2E-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v4/NANOAODSIM"
+
+# Samples["DYto2E_M_50_amcatnloFXFX"] = {
+#     "nanoAOD": "/DYto2E-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v4/NANOAODSIM"
+# }
+# Samples["DYto2Mu_M_50_amcatnloFXFX"] = {
+#     "nanoAOD": "/DYto2Mu-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v6/NANOAODSIM"
+# }
+# Samples["DYto2Tau_M_50_amcatnloFXFX"] = {
+#     "nanoAOD": "/DYto2Tau-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v7/NANOAODSIM"
+# }
+
+## DY samples jet and flavor binned
+# DY 2E
+Samples["DYto2E_M_50_0J_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2E-2Jets_Bin-0J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
 }
-Samples["DYto2Mu_M_50_amcatnloFXFX"] = {
-    "nanoAOD": "/DYto2Mu-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v6/NANOAODSIM"
-}
-Samples["DYto2Tau_M_50_amcatnloFXFX"] = {
-    "nanoAOD": "/DYto2Tau-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v7/NANOAODSIM"
+
+Samples["DYto2E_M_50_1J_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2E-2Jets_Bin-1J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
 }
 
-# ## DY samples jet and flavor binned
-# # DY 2E
-# Samples["DYto2E_M_50_0J_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2E-2Jets_Bin-0J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
-# }
+Samples["DYto2E_M_50_2J_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2E-2Jets_Bin-2J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+}
 
-# Samples["DYto2E_M_50_1J_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2E-2Jets_Bin-1J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
-# }
+# DY 2Mu
+Samples["DYto2Mu_M_50_0J_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2Mu-2Jets_Bin-0J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
+}
 
-# Samples["DYto2E_M_50_2J_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2E-2Jets_Bin-2J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
-# }
+Samples["DYto2Mu_M_50_1J_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2Mu-2Jets_Bin-1J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v1/NANOAODSIM"
+}
 
-# # DY 2Mu
-# Samples["DYto2Mu_M_50_0J_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2Mu-2Jets_Bin-0J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
-# }
+Samples["DYto2Mu_M_50_2J_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2Mu-2Jets_Bin-2J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
+}
 
-# # # FIXME still missing
-# # Samples["DYto2Mu_M_50_1J_amcatnloFXFX"] = {
-# #     "nanoAOD": "/DYto2Mu-2Jets_Bin-1J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
-# # }
+# DY 2Tau
+Samples["DYto2Tau_M_50_0J_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2Tau-2Jets_Bin-0J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v4/NANOAODSIM"
+}
 
-# Samples["DYto2Mu_M_50_2J_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2Mu-2Jets_Bin-2J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
-# }
+Samples["DYto2Tau_M_50_1J_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2Tau-2Jets_Bin-1J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+}
 
-# # DY 2Tau
-# Samples["DYto2Tau_M_50_0J_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2Tau-2Jets_Bin-0J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v4/NANOAODSIM"
-# }
-
-# Samples["DYto2Tau_M_50_1J_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2Tau-2Jets_Bin-1J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
-# }
-
-# Samples["DYto2Tau_M_50_2J_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2Tau-2Jets_Bin-2J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
-# }
+Samples["DYto2Tau_M_50_2J_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2Tau-2Jets_Bin-2J-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+}
 
 ## W*jets
 Samples["WToENu_amcatnloFXFX"] = {

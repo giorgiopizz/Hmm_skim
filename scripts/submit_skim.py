@@ -25,7 +25,7 @@ if __name__ == "__main__":
     prod_folder = f"{fw_path}/productions/{year}/"
 
     results_folder = f"{base_output_folder}/{year}/"
-    os.makedirs(results_folder, exist_ok=True)
+    os.makedirs(results_folder, exist_ok=False)
 
     with open(f"{prod_folder}/fileset.json", "r") as f:
         fileset_data = json.load(f)

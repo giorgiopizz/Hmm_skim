@@ -11,37 +11,59 @@ correctionlib.register_pyroot_binding()
 ROOT.gROOT.SetBatch(True)
 
 # ROOT.EnableImplicitMT(True)
+import sys
+
+data_folder = "data/"
+job_folder = "."
+
+# # # FIXME comment out
+# data_folder = "../data/"
+# job_folder = "../condor_jobs/job_20/"
+# # job_folder = "../condor_jobs/job_11/"
 
 
 def load_cpp_utils(data_folder):
     line = """
-    #include "DATAFOLDER/trig_match.cpp"
-    #include "DATAFOLDER/lumi.h"
+    #include "DATAFOLDER/modules/trig_match.cpp"
+    #include "DATAFOLDER/modules/lumi.h"
 
-    auto cset = correction::CorrectionSet::from_file("FILENAME");
-    auto puweight = cset->at("JSONNAME");
+    auto cset_pu = correction::CorrectionSet::from_file("FILENAME");
+    auto ceval_pu = cset_pu->at("JSONNAME");
 
-    float getWeight(float Pileup_nTrueInt) {
-    return puweight->evaluate({Pileup_nTrueInt, "nominal"});
-    }
-
-    auto lumi_filter = LumiFilter("DATAFOLDER/Cert_Collisions2024_378981_386951_Golden.json");
+    auto lumi_filter = LumiFilter("DATAFOLDER/2024/Cert_Collisions2024_378981_386951_Golden.json");
 
     """
 
     line = (
-        line.replace("FILENAME", f"{data_folder}/puWeights_BCDEFGHI.json.gz")
+        line.replace("FILENAME", f"{data_folder}/2024/puWeights_BCDEFGHI.json.gz")
         .replace("JSONNAME", "Collisions24_BCDEFGHI_goldenJSON")
         .replace("DATAFOLDER", data_folder)
     )
     ROOT.gInterpreter.Declare(line)
 
 
+load_cpp_utils(data_folder)
+sys.path.append(data_folder)
+from modules.muon_sf import run_muon_sf, load_cpp_utils as load_muon_sf_utils  # noqa: E402
+from modules.jet_id_veto import run_jetid_veto, load_cpp_utils as load_jet_id_utils  # noqa: E402
+from modules.jet_correction import (
+    run_jme_mc,
+    run_jme_data,
+    load_cpp_utils as load_jec_utils,
+)  # noqa: E402
+
 # exit(0)
 
 
 def process_file(dataset, file, outfile, is_data):
+    load_muon_sf_utils(data_folder, is_data=is_data)
+    load_jec_utils(data_folder, is_data=is_data)
+    load_jet_id_utils(data_folder)
+
     df = ROOT.RDataFrame("Events", file)
+    # # FIXME DEBUG
+    # df = df.Range(1000)
+
     if not is_data:
         sumw = df.Sum("genWeight")
     else:
@@ -53,10 +75,18 @@ def process_file(dataset, file, outfile, is_data):
     )
     df = df.Filter("Electron_pt[good_ele].size() == 0")
 
+    # use always BS pt
+    df = df.Define("Muon_pt_no_bs", "Muon_pt")
+    df = df.Define("Muon_ptErr_no_bs", "Muon_ptErr")
+    df = df.Redefine("Muon_pt", "Muon_bsConstrainedPt")
+    df = df.Redefine("Muon_ptErr", "Muon_bsConstrainedPtErr")
+
+    # pfIsoId >= 2 : Loose
     df = df.Define(
         "good_mu",
         "Muon_pt > 15 && abs(Muon_eta) < 2.4 && Muon_mediumId && Muon_pfIsoId >= 2",
     )
+
     df = df.Filter("Muon_pt[good_mu].size() == 2")
 
     df = df.Filter("HLT_IsoMu24")
@@ -67,8 +97,10 @@ def process_file(dataset, file, outfile, is_data):
     mu_cols = [
         "pt",
         "ptErr",
-        "bsConstrainedPt",
-        "bsConstrainedPtErr",
+        # "bsConstrainedPt",
+        # "bsConstrainedPtErr",
+        "pt_no_bs",
+        "ptErr_no_bs",
         "eta",
         "phi",
         "mass",
@@ -93,6 +125,7 @@ def process_file(dataset, file, outfile, is_data):
     for col in mu_cols:
         df = df.Define(f"mu1_{col}", f"Take(Muon_{col}[good_mu], muon_order)[1]")
         df = df.Define(f"mu2_{col}", f"Take(Muon_{col}[good_mu], muon_order)[0]")
+
     df = df.Define(
         "mu1_p4", "ROOT::Math::PtEtaPhiMVector(mu1_pt, mu1_eta, mu1_phi, mu1_mass)"
     )
@@ -100,9 +133,16 @@ def process_file(dataset, file, outfile, is_data):
         "mu2_p4", "ROOT::Math::PtEtaPhiMVector(mu2_pt, mu2_eta, mu2_phi, mu2_mass)"
     )
     df = df.Define("mll", "(mu1_p4 + mu2_p4).M()")
-    df = df.Filter("mll > 50 && mll < 170")
+    df = df.Filter("mll > 50 && mll < 200")
 
-    df = df.Define("TrigObj_mask", "TrigObj_id == 13 && (TrigObj_filterBits&8)!=0")
+    df = run_muon_sf(df, is_data)
+    mu_cols += ["pt_no_corr"]
+    if not is_data:
+        mu_cols += [
+            f"pt_{var}_{tag}" for var in ["scale", "res"] for tag in ["up", "down"]
+        ]
+
+    df = df.Define("TrigObj_mask", "TrigObj_id == 13 && (TrigObj_filterBits & 8) != 0")
 
     df = df.Define(
         "TrigObj_p4",
@@ -118,10 +158,24 @@ def process_file(dataset, file, outfile, is_data):
     )
     mu_cols += ["HasMatching_singleMu"]
 
+    df = run_jetid_veto(df)
+    if is_data:
+        df = run_jme_data(df)
+    else:
+        df = run_jme_mc(df)
+
     if not is_data:
         df = df.Define(
-            "pu_weight",
-            "getWeight(Pileup_nTrueInt)",
+            "weight_sf_pu",
+            'ceval_pu->evaluate({Pileup_nTrueInt, "nominal"})',
+        )
+        df = df.Define(
+            "weight_sf_pu_up",
+            'ceval_pu->evaluate({Pileup_nTrueInt, "up"})',
+        )
+        df = df.Define(
+            "weight_sf_pu_down",
+            'ceval_pu->evaluate({Pileup_nTrueInt, "down"})',
         )
 
     columns = [
@@ -134,7 +188,10 @@ def process_file(dataset, file, outfile, is_data):
     if not is_data:
         columns += [
             "genWeight",
-            "pu_weight",
+            # theory weights
+            "LHEScaleWeight",
+            "LHEPdfWeight",
+            "PSWeight",
             # gen part
             "GenPart_pt",
             "GenPart_eta",
@@ -152,6 +209,22 @@ def process_file(dataset, file, outfile, is_data):
             "Jet_hadronFlavour",
         ]
 
+        columns += ["weight_sf_pu", "weight_sf_pu_up", "weight_sf_pu_down"]
+
+        # muon SFs
+        for mu_idx in [1, 2]:
+            columns += [
+                f"weight_sf_mu{mu_idx}_id",
+                f"weight_sf_mu{mu_idx}_id_up",
+                f"weight_sf_mu{mu_idx}_id_down",
+                f"weight_sf_mu{mu_idx}_iso",
+                f"weight_sf_mu{mu_idx}_iso_up",
+                f"weight_sf_mu{mu_idx}_iso_down",
+                f"weight_sf_mu{mu_idx}_trg",
+                f"weight_sf_mu{mu_idx}_trg_up",
+                f"weight_sf_mu{mu_idx}_trg_down",
+            ]
+
     columns += [f"mu{idx}_{col}" for col in mu_cols for idx in [1, 2]]
 
     jet_cols = [
@@ -160,6 +233,8 @@ def process_file(dataset, file, outfile, is_data):
         "phi",
         "mass",
         "btagPNetB",
+        "btagPNetCvL",
+        "btagPNetQvG",
         "chHEF",
         "neHEF",
         "chEmEF",
@@ -169,9 +244,43 @@ def process_file(dataset, file, outfile, is_data):
         "neMultiplicity",
         "area",
         "rawFactor",
+        "tightId",
+        "tightLepVetoId",
+        "veto_map",
+        "veto",
     ]
 
+    jet_cols += [
+        "pt_no_corr",
+        "mass_no_corr",
+    ]
+    if not is_data:
+        # unc
+        jet_cols += [
+            "pt_jec",
+            "mass_jec",
+            "pt_jer_down",
+            "mass_jer_down",
+            "pt_jer_up",
+            "mass_jer_up",
+            "pt_jes_down",
+            "mass_jes_down",
+            "pt_jes_up",
+            "mass_jes_up",
+        ]
+
+    if year == "2024":
+        jet_cols += ["btagUParTAK4B"]
+
     columns += [f"Jet_{col}" for col in jet_cols]
+
+    softActivity_cols = [
+        "SoftActivityJetHT",
+        "SoftActivityJetHT2",
+        "SoftActivityJetHT5",
+    ]
+
+    columns += softActivity_cols
 
     nevents_after = df.Count()
 
@@ -196,21 +305,15 @@ def process_file(dataset, file, outfile, is_data):
     return {dataset: values}
 
 
-data_folder = "data/"
-job_folder = "."
-
-# # FIXME comment
-# data_folder = "../data/"
-# job_folder = "../condor_jobs/job_217/"
-
 with open(f"{job_folder}/input.json") as f:
     data = json.load(f)
+
+year = "2024"
 
 out_tmp = data["outfile"]
 if "/eos/" in data["outfile"]:
     out_tmp = "output.root"
 
-load_cpp_utils(data_folder)
 result = process_file(data["dataset"], data["file"][:], out_tmp, data["is_data"])
 
 if "/eos/" in data["outfile"]:

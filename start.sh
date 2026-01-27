@@ -7,6 +7,8 @@ if [ -f "$SPECIAL_SOURCE" ]; then
     source $SPECIAL_SOURCE
 fi
 
+source $FW_PATH/spritz-env/bin/activate
+
 export PYTHONPATH=${FW_PATH}:$PYTHONPATH
 
 chmod +x ${FW_PATH}/scripts/*.py
