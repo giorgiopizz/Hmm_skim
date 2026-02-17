@@ -7,7 +7,9 @@ if [ -f "$SPECIAL_SOURCE" ]; then
     source $SPECIAL_SOURCE
 fi
 
-source $FW_PATH/spritz-env/bin/activate
+source $FW_PATH/spritz_env/bin/activate
+
+export PYTHONPATH=${FW_PATH}/spritz_env/lib/python3.12/site-packages:$PYTHONPATH
 
 export PYTHONPATH=${FW_PATH}:$PYTHONPATH
 

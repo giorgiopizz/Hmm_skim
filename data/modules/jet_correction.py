@@ -16,11 +16,11 @@ def load_cpp_utils(data_folder, is_data=False):
         JEC_TAG = "Summer24Prompt24_V2_DATA"
         line = f"""
         auto cset_jerc = correction::CorrectionSet::from_file("{JERC_FILE}");
-        auto cset_jersmear = correction::CorrectionSet::from_file("{JERSMEAR_FILE}");
-        auto cset_jec_l1 = cset_jerc->at("{JEC_TAG}_L1FastJet_{JER_JET_ALGO}");
-        auto cset_jec_l2 = cset_jerc->at("{JEC_TAG}_L2Relative_{JER_JET_ALGO}");
-        auto cset_jec_l3 = cset_jerc->at("{JEC_TAG}_L3Absolute_{JER_JET_ALGO}");
-        auto cset_jec_l2l3res = cset_jerc->at("{JEC_TAG}_L2L3Residual_{JER_JET_ALGO}");
+        auto cset_jec = cset_jerc->compound().at("{JEC_TAG}_L1L2L3Res_{JER_JET_ALGO}");
+        // auto cset_jec_l1 = cset_jerc->at("{JEC_TAG}_L1FastJet_{JER_JET_ALGO}");
+        // auto cset_jec_l2 = cset_jerc->at("{JEC_TAG}_L2Relative_{JER_JET_ALGO}");
+        // auto cset_jec_l3 = cset_jerc->at("{JEC_TAG}_L3Absolute_{JER_JET_ALGO}");
+        // auto cset_jec_l2l3res = cset_jerc->at("{JEC_TAG}_L2L3Residual_{JER_JET_ALGO}");
         """
     else:
         JEC_TAG = "Summer24Prompt24_V2_MC"
@@ -46,12 +46,13 @@ def load_cpp_utils(data_folder, is_data=False):
 
 
 def run_jme_data(df):
-    df = df.Define("Jet_pt_no_corr", "Jet_pt")
-    df = df.Define("Jet_mass_no_corr", "Jet_mass")
+    df = df.Redefine("Jet_pt_no_corr", "Jet_pt")
+    df = df.Redefine("Jet_mass_no_corr", "Jet_mass")
 
     df = df.Define(
         "Jet_pt_mass_jec",
-        "sf_jec_data(cset_jec_l1, cset_jec_l2, cset_jec_l3, cset_jec_l2l3res, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
+        # "sf_jec_data(cset_jec_l1, cset_jec_l2, cset_jec_l3, cset_jec_l2l3res, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
+        "sf_jec_data(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
     )
     df = df.Define("Jet_pt_jec", "Jet_pt_mass_jec.get_pt()")
     df = df.Define("Jet_mass_jec", "Jet_pt_mass_jec.get_mass()")
@@ -63,7 +64,7 @@ def run_jme_data(df):
     return df
 
 
-def run_jme_mc(df):
+def run_jme_mc(df, run_syst=True):
     # 1. first apply JEC
     # 2. apply JER
     # 3. compute JES
@@ -91,22 +92,23 @@ def run_jme_mc(df):
     df = df.Redefine("Jet_pt", "std::get<0>(Jet_pt_mass_jec_jer).get_pt()")
     df = df.Redefine("Jet_mass", "std::get<0>(Jet_pt_mass_jec_jer).get_mass()")
 
-    df = df.Define("Jet_pt_jer_down", "std::get<1>(Jet_pt_mass_jec_jer).get_pt()")
-    df = df.Define("Jet_mass_jer_down", "std::get<1>(Jet_pt_mass_jec_jer).get_mass()")
+    if run_syst:
+        df = df.Define("Jet_pt_jer_down", "std::get<1>(Jet_pt_mass_jec_jer).get_pt()")
+        df = df.Define("Jet_mass_jer_down", "std::get<1>(Jet_pt_mass_jec_jer).get_mass()")
 
-    df = df.Define("Jet_pt_jer_up", "std::get<2>(Jet_pt_mass_jec_jer).get_pt()")
-    df = df.Define("Jet_mass_jer_up", "std::get<2>(Jet_pt_mass_jec_jer).get_mass()")
+        df = df.Define("Jet_pt_jer_up", "std::get<2>(Jet_pt_mass_jec_jer).get_pt()")
+        df = df.Define("Jet_mass_jer_up", "std::get<2>(Jet_pt_mass_jec_jer).get_mass()")
 
-    # apply JES uncertainties
-    df = df.Define(
-        "Jet_pt_mass_jes",
-        "sf_jes(cset_jes, Jet_eta, Jet_pt, Jet_mass)",
-    )
-    df = df.Define("Jet_pt_jes_down", "std::get<0>(Jet_pt_mass_jes).get_pt()")
-    df = df.Define("Jet_mass_jes_down", "std::get<0>(Jet_pt_mass_jes).get_mass()")
+        # apply JES uncertainties
+        df = df.Define(
+            "Jet_pt_mass_jes",
+            "sf_jes(cset_jes, Jet_eta, Jet_pt, Jet_mass)",
+        )
+        df = df.Define("Jet_pt_jes_down", "std::get<0>(Jet_pt_mass_jes).get_pt()")
+        df = df.Define("Jet_mass_jes_down", "std::get<0>(Jet_pt_mass_jes).get_mass()")
 
-    df = df.Define("Jet_pt_jes_up", "std::get<1>(Jet_pt_mass_jes).get_pt()")
-    df = df.Define("Jet_mass_jes_up", "std::get<1>(Jet_pt_mass_jes).get_mass()")
+        df = df.Define("Jet_pt_jes_up", "std::get<1>(Jet_pt_mass_jes).get_pt()")
+        df = df.Define("Jet_mass_jes_up", "std::get<1>(Jet_pt_mass_jes).get_mass()")
 
     # df.Display(["Jet_pt_no_corr", "Jet_pt_jec", "Jet_pt", "Jet_eta"]).Print()
 

@@ -7,16 +7,15 @@ import json
 from utils.utils import get_fw_path
 import sys
 
-max_cores = 2
 
-
-def fileset(files):
+def fileset(files, max_cores=2):
     url = "https://cmsweb.cern.ch/dbs/prod/global/DBSReader"
     dbs_api = DbsApi(url=url)
 
     rucio_client = rucio_utils.get_rucio_client()
     xrootd_sites_map = rucio_utils.get_xrootd_sites_map()
-    good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE", "US"]
+    # good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE", "US"]
+    good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE"]
     default_kwargs = dict(
         allowlist_sites=[],
         blocklist_sites=[
@@ -75,8 +74,15 @@ if __name__ == "__main__":
     parser.add_argument(
         "--year", type=str, default="2024", help="Year of the production"
     )
+    parser.add_argument(
+        "-j",
+        type=int,
+        default=2,
+        help="Number of parallel jobs to run for querying the fileset",
+    )
     args = parser.parse_args()
     year = args.year
+    max_cores = args.j
     fw_path = get_fw_path()
     prod_folder = f"{fw_path}/productions/{year}/"
     sys.path.insert(0, prod_folder)

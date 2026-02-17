@@ -57,10 +57,11 @@ sf_jec(
 
 Result_pt_mass
 sf_jec_data(
-    const std::shared_ptr<const correction::Correction> &cset_jec_l1,
-    const std::shared_ptr<const correction::Correction> &cset_jec_l2,
-    const std::shared_ptr<const correction::Correction> &cset_jec_l3,
-    const std::shared_ptr<const correction::Correction> &cset_jec_l2l3res,
+    // const std::shared_ptr<const correction::Correction> &cset_jec_l1,
+    // const std::shared_ptr<const correction::Correction> &cset_jec_l2,
+    // const std::shared_ptr<const correction::Correction> &cset_jec_l3,
+    // const std::shared_ptr<const correction::Correction> &cset_jec_l2l3res,
+    const std::shared_ptr<const correction::CompoundCorrection> &cset_jec,
     const RVecF &jet_pt,
     const RVecF &jet_eta,
     const RVecF &jet_phi,
@@ -76,23 +77,28 @@ sf_jec_data(
     {
         // workaround for 2024 issue
 
-        double pt_l1 = jet_pt[i] * cset_jec_l1->evaluate({jet_area[i], jet_eta[i],
-                                                          jet_pt[i] * (1.f - jet_rawFactor[i]),
-                                                          rho});
+        // double pt_l1 = jet_pt[i] * cset_jec_l1->evaluate({jet_area[i], jet_eta[i],
+        //                                                   jet_pt[i] * (1.f - jet_rawFactor[i]),
+        //                                                   rho});
 
-        double pt_l2 = pt_l1 * cset_jec_l2->evaluate({jet_eta[i], jet_phi[i],
-                                                      pt_l1});
+        // double pt_l2 = pt_l1 * cset_jec_l2->evaluate({jet_eta[i], jet_phi[i],
+        //                                               pt_l1});
 
-        double pt_l3 = pt_l2 * cset_jec_l3->evaluate({jet_eta[i],
-                                                      pt_l2});
+        // double pt_l3 = pt_l2 * cset_jec_l3->evaluate({jet_eta[i],
+        //                                               pt_l2});
 
-        double pt_for_corr = pt_l3;
-        if (pt_for_corr < 30 && abs(jet_eta[i]) >= 2.0 && abs(jet_eta[i]) <= 2.5)
-            pt_for_corr = 30;
+        // double pt_for_corr = pt_l3;
+        // if (pt_for_corr < 30 && abs(jet_eta[i]) >= 2.0 && abs(jet_eta[i]) <= 2.5)
+        //     pt_for_corr = 30;
 
-        double pt_l2l3res = pt_l3 * cset_jec_l2l3res->evaluate({(float)run, jet_eta[i], pt_for_corr});
+        // double pt_l2l3res = pt_l3 * cset_jec_l2l3res->evaluate({(float)run, jet_eta[i], pt_for_corr});
 
-        double sf = pt_l2l3res / (jet_pt[i] * (1.f - jet_rawFactor[i]));
+        // double sf = pt_l2l3res / (jet_pt[i] * (1.f - jet_rawFactor[i]));
+
+
+        auto sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
+                                      jet_pt[i] * (1.f - jet_rawFactor[i]),
+                                      rho, jet_phi[i], (float)run});
 
         if (sf >= 0.f)
         {

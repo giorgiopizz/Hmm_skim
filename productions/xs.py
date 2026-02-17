@@ -4,6 +4,10 @@ xs = {}
 for lep in ["E", "Mu", "Tau"]:
     xs[f"DYto2{lep}_M_50_amcatnloFXFX"] = 2094.2
 
+    xs[f"DYto2{lep}_M_50_0J_amcatnloFXFX"] = 5378.0 / 3
+    xs[f"DYto2{lep}_M_50_1J_amcatnloFXFX"] = 1017.0 / 3
+    xs[f"DYto2{lep}_M_50_2J_amcatnloFXFX"] = 385.5 / 3
+
 for lep in ["E", "Mu", "Tau"]:
     xs[f"WTo{lep}Nu_amcatnloFXFX"] = 9013.3 + 12128.4
 
