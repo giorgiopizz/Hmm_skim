@@ -20,6 +20,7 @@ run_systematics = True
 run_systematics = False
 
 DEBUG = False
+# DEBUG = True
 
 if DEBUG:
     # # # FIXME comment out
@@ -48,6 +49,8 @@ def process_file(dataset, file, outfile, is_data):
     load_muon_sf_utils(data_folder, year, is_data=is_data)
     load_jet_id_utils(data_folder, year, is_data=is_data)
     # load_jec_utils(data_folder, is_data=is_data)
+
+    # exit()
 
     df = ROOT.RDataFrame("Events", file)
     # # FIXME DEBUG
@@ -119,6 +122,24 @@ def process_file(dataset, file, outfile, is_data):
         df = df.Define(f"mu1_{col}", f"Take(Muon_{col}[good_mu], muon_order)[1]")
         df = df.Define(f"mu2_{col}", f"Take(Muon_{col}[good_mu], muon_order)[0]")
 
+    # Filter trigger matched 
+    df = df.Define(
+        "mu1_trigger_idx",
+        "trg_match_ind(mu1_eta, mu1_phi, TrigObj_id, TrigObj_eta, TrigObj_phi, -99)",
+    )
+    df = df.Define(
+        "mu2_trigger_idx",
+        "trg_match_ind(mu2_eta, mu2_phi, TrigObj_id, TrigObj_eta, TrigObj_phi, mu1_trigger_idx)",
+    )
+    # mu_cols += ["trigger_idx"]
+    df = df.Define(
+        "mu_trigger_idx", "mu1_pt > mu2_pt ? mu1_trigger_idx : mu2_trigger_idx"
+    )
+    df = df.Filter("mu_trigger_idx >= 0")
+
+    # apply SFs and ScaRe
+    df = run_muon_sf(df, is_data, run_syst=run_systematics)
+
     df = df.Define(
         "mu1_p4", "ROOT::Math::PtEtaPhiMVector(mu1_pt, mu1_eta, mu1_phi, mu1_mass)"
     )
@@ -128,28 +149,27 @@ def process_file(dataset, file, outfile, is_data):
     df = df.Define("mll", "(mu1_p4 + mu2_p4).M()")
     df = df.Filter("mll > 50 && mll < 200")
 
-    df = run_muon_sf(df, is_data, run_syst=run_systematics)
     mu_cols += ["pt_no_corr"]
     if not is_data and run_systematics:
         mu_cols += [
             f"pt_{var}_{tag}" for var in ["scale", "res"] for tag in ["up", "down"]
         ]
 
-    df = df.Define("TrigObj_mask", "TrigObj_id == 13 && (TrigObj_filterBits & 8) != 0")
+    # df = df.Define("TrigObj_mask", "TrigObj_id == 13 && (TrigObj_filterBits & 8) != 0")
 
-    df = df.Define(
-        "TrigObj_p4",
-        "Construct<ROOT::Math::PtEtaPhiMVector>(TrigObj_pt, TrigObj_eta, TrigObj_phi, ROOT::RVecF(TrigObj_pt.size(), 0.))",
-    )
-    df = df.Redefine("TrigObj_p4", "TrigObj_p4[TrigObj_mask]")
+    # df = df.Define(
+    #     "TrigObj_p4",
+    #     "Construct<ROOT::Math::PtEtaPhiMVector>(TrigObj_pt, TrigObj_eta, TrigObj_phi, ROOT::RVecF(TrigObj_pt.size(), 0.))",
+    # )
+    # df = df.Redefine("TrigObj_p4", "TrigObj_p4[TrigObj_mask]")
 
-    df = df.Define(
-        "mu1_HasMatching_singleMu", "FindMatching(mu1_p4, TrigObj_p4, 0.4) > -1"
-    )
-    df = df.Define(
-        "mu2_HasMatching_singleMu", "FindMatching(mu2_p4, TrigObj_p4, 0.4) > -1"
-    )
-    mu_cols += ["HasMatching_singleMu"]
+    # df = df.Define(
+    #     "mu1_HasMatching_singleMu", "FindMatching(mu1_p4, TrigObj_p4, 0.4) > -1"
+    # )
+    # df = df.Define(
+    #     "mu2_HasMatching_singleMu", "FindMatching(mu2_p4, TrigObj_p4, 0.4) > -1"
+    # )
+
 
     df = run_jetid_veto(df, year)
 
@@ -323,7 +343,10 @@ out_tmp = data["outfile"]
 if "/eos/" in data["outfile"]:
     out_tmp = "output.root"
 
-result = process_file(data["dataset"], data["file"][:1], out_tmp, data["is_data"])
+if not DEBUG:
+    result = process_file(data["dataset"], data["file"][:], out_tmp, data["is_data"])
+else:
+    result = process_file(data["dataset"], data["file"][:1], out_tmp, data["is_data"])
 
 if not DEBUG:
     if "/eos/" in data["outfile"]:
