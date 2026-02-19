@@ -1,6 +1,7 @@
 import ROOT
 import time
 
+import argparse
 import json
 import correctionlib
 import subprocess
@@ -48,7 +49,7 @@ def process_file(dataset, file, outfile, is_data):
     load_pu_utils(data_folder, year)
     load_muon_sf_utils(data_folder, year, is_data=is_data)
     load_jet_id_utils(data_folder, year, is_data=is_data)
-    # load_jec_utils(data_folder, is_data=is_data)
+    load_jec_utils(data_folder, year, is_data=is_data)
 
     # exit()
 
@@ -166,10 +167,10 @@ def process_file(dataset, file, outfile, is_data):
 
     df = run_jetid_veto(df, year)
 
-    # if is_data:
-    #     df = run_jme_data(df)
-    # else:
-    #     df = run_jme_mc(df, run_syst=run_systematics)
+    if is_data:
+        df = run_jme_data(df, year)
+    else:
+        df = run_jme_mc(df, year, run_syst=run_systematics)
 
     df = df.Define("Jet_good", "Jet_pt > 25 && Jet_tightId && !Jet_veto_no_overlap")
 
@@ -184,6 +185,11 @@ def process_file(dataset, file, outfile, is_data):
     ]
     if year == "2024":
         jet_cols += ["btagUParTAK4B"]
+    if not is_data:
+        jet_cols += [
+            "genJetIdx",
+            "hadronFlavour",
+        ]
 
     # jet_cols += [
     #     "pt_no_corr",
@@ -253,8 +259,6 @@ def process_file(dataset, file, outfile, is_data):
             # "GenJet_eta",
             # "GenJet_phi",
             # "GenJet_mass",
-            # "Jet_genJetIdx",
-            # "Jet_hadronFlavour",
         ]
 
         columns += ["weight_sf_pu"]

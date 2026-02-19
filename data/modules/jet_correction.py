@@ -1,19 +1,29 @@
 import ROOT
 
 
-def load_cpp_utils(data_folder, is_data=False):
-    JERC_FILE = f"{data_folder}/2024/jet_jerc.json.gz"
-    JERSMEAR_FILE = f"{data_folder}/2024/jer_smear.json.gz"
+def load_cpp_utils(data_folder, year, is_data=False):
+    JERC_FILE = f"{data_folder}/{year}/jet_jerc.json.gz"
+    JERSMEAR_FILE = f"{data_folder}/{year}/jer_smear.json.gz"
     JER_JET_ALGO = "AK4PFPuppi"
 
     line = f"""
     #include "{data_folder}/modules/jet_correction.cpp"
     """
     ROOT.gInterpreter.Declare(line)
-    print("Loaded JEC/JER C++ modules")
+
+    jerc_tags = {
+        "2024": {
+            "data": "Summer24Prompt24_V2_DATA",
+            "mc": ["Summer24Prompt24_V2_MC", "Summer23BPixPrompt23_RunD_JRV1_MC"],
+        },
+        "2023": {
+            "data": "Summer23Prompt23_V2_DATA",
+            "mc": ["Summer23Prompt23_V2_MC", "Summer23Prompt23_RunCv1234_JRV1_MC"],
+        },
+    }
 
     if is_data:
-        JEC_TAG = "Summer24Prompt24_V2_DATA"
+        JEC_TAG = jerc_tags[year]["data"]
         line = f"""
         auto cset_jerc = correction::CorrectionSet::from_file("{JERC_FILE}");
         auto cset_jec = cset_jerc->compound().at("{JEC_TAG}_L1L2L3Res_{JER_JET_ALGO}");
@@ -23,8 +33,7 @@ def load_cpp_utils(data_folder, is_data=False):
         // auto cset_jec_l2l3res = cset_jerc->at("{JEC_TAG}_L2L3Residual_{JER_JET_ALGO}");
         """
     else:
-        JEC_TAG = "Summer24Prompt24_V2_MC"
-        JER_TAG = "Summer23BPixPrompt23_RunD_JRV1_MC"
+        JEC_TAG, JER_TAG = jerc_tags[year]["mc"]
         line = f"""
         auto cset_jerc = correction::CorrectionSet::from_file("{JERC_FILE}");
         auto cset_jersmear = correction::CorrectionSet::from_file("{JERSMEAR_FILE}");
@@ -43,17 +52,24 @@ def load_cpp_utils(data_folder, is_data=False):
 
         """
     ROOT.gInterpreter.Declare(line)
+    print("Loaded JEC/JER C++ modules")
 
 
-def run_jme_data(df):
-    df = df.Redefine("Jet_pt_no_corr", "Jet_pt")
-    df = df.Redefine("Jet_mass_no_corr", "Jet_mass")
+def run_jme_data(df, year):
+    df = df.Define("Jet_pt_no_corr", "Jet_pt")
+    df = df.Define("Jet_mass_no_corr", "Jet_mass")
 
-    df = df.Define(
-        "Jet_pt_mass_jec",
-        # "sf_jec_data(cset_jec_l1, cset_jec_l2, cset_jec_l3, cset_jec_l2l3res, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
-        "sf_jec_data(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
-    )
+    if year == "2024":
+        df = df.Define(
+            "Jet_pt_mass_jec",
+            # "sf_jec_data(cset_jec_l1, cset_jec_l2, cset_jec_l3, cset_jec_l2l3res, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
+            "v15::sf_jec_data(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
+        )
+    if year == "2023":
+        df = df.Define(
+            "Jet_pt_mass_jec",
+            "v12::sf_jec_data(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
+        )
     df = df.Define("Jet_pt_jec", "Jet_pt_mass_jec.get_pt()")
     df = df.Define("Jet_mass_jec", "Jet_pt_mass_jec.get_mass()")
 
@@ -64,7 +80,7 @@ def run_jme_data(df):
     return df
 
 
-def run_jme_mc(df, run_syst=True):
+def run_jme_mc(df, year, run_syst=True):
     # 1. first apply JEC
     # 2. apply JER
     # 3. compute JES
@@ -72,10 +88,16 @@ def run_jme_mc(df, run_syst=True):
     df = df.Define("Jet_pt_no_corr", "Jet_pt")
     df = df.Define("Jet_mass_no_corr", "Jet_mass")
 
-    df = df.Define(
-        "Jet_pt_mass_jec",
-        "sf_jec(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll)",
-    )
+    if year == "2024":
+        df = df.Define(
+            "Jet_pt_mass_jec",
+            "v15::sf_jec(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll)",
+        )
+    if year == "2023":
+        df = df.Define(
+            "Jet_pt_mass_jec",
+            "v12::sf_jec(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll)",
+        )
     df = df.Define("Jet_pt_jec", "Jet_pt_mass_jec.get_pt()")
     df = df.Define("Jet_mass_jec", "Jet_pt_mass_jec.get_mass()")
 
@@ -94,7 +116,9 @@ def run_jme_mc(df, run_syst=True):
 
     if run_syst:
         df = df.Define("Jet_pt_jer_down", "std::get<1>(Jet_pt_mass_jec_jer).get_pt()")
-        df = df.Define("Jet_mass_jer_down", "std::get<1>(Jet_pt_mass_jec_jer).get_mass()")
+        df = df.Define(
+            "Jet_mass_jer_down", "std::get<1>(Jet_pt_mass_jec_jer).get_mass()"
+        )
 
         df = df.Define("Jet_pt_jer_up", "std::get<2>(Jet_pt_mass_jec_jer).get_pt()")
         df = df.Define("Jet_mass_jer_up", "std::get<2>(Jet_pt_mass_jec_jer).get_mass()")

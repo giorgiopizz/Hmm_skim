@@ -72,7 +72,7 @@ def fileset(files, max_cores=2):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--year", type=str, default="2024", help="Year of the production"
+        "--year", type=str, required=True, help="Year of the production"
     )
     parser.add_argument(
         "-j",
