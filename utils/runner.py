@@ -28,7 +28,7 @@ if DEBUG:
     job_folder = "../condor_jobs/job_20/"
     # # job_folder = "../condor_jobs/job_11/"
     # job_folder = "../condor_jobs/job_0/"
-    job_folder = "../condor_jobs/job_95/"
+    # job_folder = "../condor_jobs/job_95/"
 
 
 sys.path.append(data_folder)
@@ -74,8 +74,8 @@ def process_file(dataset, file, outfile, is_data):
     # use always BS pt
     df = df.Define("Muon_pt_no_bs", "Muon_pt")
     df = df.Define("Muon_ptErr_no_bs", "Muon_ptErr")
-    df = df.Redefine("Muon_pt", "Muon_bsConstrainedPt")
-    df = df.Redefine("Muon_ptErr", "Muon_bsConstrainedPtErr")
+    # df = df.Redefine("Muon_pt", "Muon_bsConstrainedPt")
+    # df = df.Redefine("Muon_ptErr", "Muon_bsConstrainedPtErr")
 
     # pfIsoId >= 2 : Loose
     df = df.Define(
@@ -122,7 +122,10 @@ def process_file(dataset, file, outfile, is_data):
         df = df.Define(f"mu1_{col}", f"Take(Muon_{col}[good_mu], muon_order)[1]")
         df = df.Define(f"mu2_{col}", f"Take(Muon_{col}[good_mu], muon_order)[0]")
 
-    # Filter trigger matched 
+    # OS
+    df = df.Filter("mu1_charge != mu2_charge")
+
+    # Filter trigger matched
     df = df.Define(
         "mu1_trigger_idx",
         "trg_match_ind(mu1_eta, mu1_phi, TrigObj_id, TrigObj_eta, TrigObj_phi, -99)",
@@ -139,6 +142,9 @@ def process_file(dataset, file, outfile, is_data):
 
     # apply SFs and ScaRe
     df = run_muon_sf(df, is_data, run_syst=run_systematics)
+
+    if not is_data:
+        df = df.Define("weight_trigger_SF", "mu_trigger_idx == mu1_trigger_idx ? weight_sf_mu1_trg : weight_sf_mu2_trg")
 
     df = df.Define(
         "mu1_p4", "ROOT::Math::PtEtaPhiMVector(mu1_pt, mu1_eta, mu1_phi, mu1_mass)"
@@ -169,7 +175,6 @@ def process_file(dataset, file, outfile, is_data):
     # df = df.Define(
     #     "mu2_HasMatching_singleMu", "FindMatching(mu2_p4, TrigObj_p4, 0.4) > -1"
     # )
-
 
     df = run_jetid_veto(df, year)
 
@@ -226,6 +231,7 @@ def process_file(dataset, file, outfile, is_data):
         ]
 
         columns += ["weight_sf_pu"]
+        columns += ["weight_trigger_SF"]
         if run_systematics:
             columns += ["weight_sf_pu_up", "weight_sf_pu_down"]
 
