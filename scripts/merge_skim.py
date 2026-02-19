@@ -2,6 +2,7 @@
 import json
 import argparse
 import sys
+import os
 
 from scripts.submit_skim import base_output_folder
 
@@ -61,6 +62,8 @@ if __name__ == "__main__":
     jobs_results = []
     for ijob in jobs_mapped:
         job_folder = f"condor_jobs/job_{ijob}"
+        if not os.path.exists(f"{job_folder}/output.json"):
+            continue
         with open(f"{job_folder}/output.json") as f:
             if f.read() == "":
                 print(f"Error: empty output.json in job {ijob}")

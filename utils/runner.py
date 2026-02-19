@@ -19,10 +19,10 @@ run_systematics = True
 run_systematics = False
 
 # # # FIXME comment out
-data_folder = "../data/"
+#data_folder = "../data/"
 # job_folder = "../condor_jobs/job_20/"
 # # job_folder = "../condor_jobs/job_11/"
-job_folder = "../condor_jobs/job_0/"
+#job_folder = "../condor_jobs/job_0/"
 
 
 def load_cpp_utils(data_folder):
@@ -337,17 +337,17 @@ out_tmp = data["outfile"]
 if "/eos/" in data["outfile"]:
     out_tmp = "output.root"
 
-result = process_file(data["dataset"], data["file"][:2], out_tmp, data["is_data"])
+result = process_file(data["dataset"], data["file"][:], out_tmp, data["is_data"])
 
-# if "/eos/" in data["outfile"]:
-#     cmd = f"xrdcp {out_tmp} root://eosuser.cern.ch/{data['outfile']}"
-#     # run cmd, if any error, remove output.root and raise exception
-#     proc = subprocess.run(cmd, shell=True)
-#     if proc.returncode != 0:
-#         os.remove(out_tmp)
-#         raise RuntimeError(f"Failed to copy output file: {cmd}")
+if "/eos/" in data["outfile"]:
+    cmd = f"xrdcp {out_tmp} root://eosuser.cern.ch/{data['outfile']}"
+    # run cmd, if any error, remove output.root and raise exception
+    proc = subprocess.run(cmd, shell=True)
+    if proc.returncode != 0:
+        os.remove(out_tmp)
+        raise RuntimeError(f"Failed to copy output file: {cmd}")
 
-# os.remove(out_tmp)
+os.remove(out_tmp)
 
-# with open(f"{job_folder}/output.json", "w") as f:
-#     json.dump(result, f, indent=2)
+with open(f"{job_folder}/output.json", "w") as f:
+    json.dump(result, f, indent=2)
