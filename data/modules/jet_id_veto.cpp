@@ -42,7 +42,37 @@ std::tuple<RVecI, RVecI> jet_id(
             Jet_neMultiplicity[i],
             Jet_chMultiplicity[i] + Jet_neMultiplicity[i],
         }));
+    }
+    return res;
+}
 
+std::tuple<RVecI, RVecI> jet_id_v12(
+    const RVecF &Jet_eta,
+    const RVecF &Jet_neHEF,
+    const RVecF &Jet_chEmEF,
+    const RVecF &Jet_neEmEF,
+    const RVecF &Jet_muEF,
+    const RVecI &Jet_jetId)
+{
+    auto res = std::make_tuple<RVecI, RVecI>(RVecI(Jet_eta.size(), 0), RVecI(Jet_eta.size(), 0));
+    for (size_t i = 0; i < Jet_eta.size(); i++)
+    {
+        bool Jet_passJetIdTight = false;
+        if (fabs(Jet_eta[i]) <= 2.7)
+            Jet_passJetIdTight = Jet_jetId[i] & (1 << 1);
+        else if (fabs(Jet_eta[i]) > 2.7 && fabs(Jet_eta[i]) <= 3.0)
+            Jet_passJetIdTight = (Jet_jetId[i] & (1 << 1)) && (Jet_neHEF[i] < 0.99);
+        else if (fabs(Jet_eta[i]) > 3.0)
+            Jet_passJetIdTight = (Jet_jetId[i] & (1 << 1)) && (Jet_neEmEF[i] < 0.4);
+
+        bool Jet_passJetIdTightLepVeto = false;
+        if (fabs(Jet_eta[i]) <= 2.7)
+            Jet_passJetIdTightLepVeto = Jet_passJetIdTight && (Jet_muEF[i] < 0.8) && (Jet_chEmEF[i] < 0.8);
+        else
+            Jet_passJetIdTightLepVeto = Jet_passJetIdTight;
+
+        std::get<0>(res)[i] = int(Jet_passJetIdTight);
+        std::get<1>(res)[i] = int(Jet_passJetIdTightLepVeto);
     }
     return res;
 }

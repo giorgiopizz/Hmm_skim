@@ -1,6 +1,11 @@
 # all in pb
 xs = {}
 
+xs["DYto2L_M_50_amcatnloFXFX"] = 2094.2 * 3
+xs["DYto2L_M_50_0J_amcatnloFXFX"] = 5378.0
+xs["DYto2L_M_50_1J_amcatnloFXFX"] = 1017.0
+xs["DYto2L_M_50_2J_amcatnloFXFX"] = 385.5
+
 for lep in ["E", "Mu", "Tau"]:
     xs[f"DYto2{lep}_M_50_amcatnloFXFX"] = 2094.2
 

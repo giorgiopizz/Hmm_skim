@@ -13,40 +13,25 @@ ROOT.gROOT.SetBatch(True)
 
 # ROOT.EnableImplicitMT(True)
 
+year = "2023"
 data_folder = "data/"
 job_folder = "."
 run_systematics = True
 run_systematics = False
 
-# # # FIXME comment out
-#data_folder = "../data/"
-# job_folder = "../condor_jobs/job_20/"
-# # job_folder = "../condor_jobs/job_11/"
-#job_folder = "../condor_jobs/job_0/"
+DEBUG = False
+
+if DEBUG:
+    # # # FIXME comment out
+    data_folder = "../data/"
+    job_folder = "../condor_jobs/job_20/"
+    # # job_folder = "../condor_jobs/job_11/"
+    # job_folder = "../condor_jobs/job_0/"
+    job_folder = "../condor_jobs/job_95/"
 
 
-def load_cpp_utils(data_folder):
-    line = """
-    #include "DATAFOLDER/modules/trig_match.cpp"
-    #include "DATAFOLDER/modules/lumi.h"
-
-    auto cset_pu = correction::CorrectionSet::from_file("FILENAME");
-    auto ceval_pu = cset_pu->at("JSONNAME");
-
-    auto lumi_filter = LumiFilter("DATAFOLDER/2024/Cert_Collisions2024_378981_386951_Golden.json");
-
-    """
-
-    line = (
-        line.replace("FILENAME", f"{data_folder}/2024/puWeights_BCDEFGHI.json.gz")
-        .replace("JSONNAME", "Collisions24_BCDEFGHI_goldenJSON")
-        .replace("DATAFOLDER", data_folder)
-    )
-    ROOT.gInterpreter.Declare(line)
-
-
-load_cpp_utils(data_folder)
 sys.path.append(data_folder)
+from modules.pu import load_cpp_utils as load_pu_utils  # noqa: E402
 from modules.muon_sf import run_muon_sf, load_cpp_utils as load_muon_sf_utils  # noqa: E402
 from modules.jet_id_veto import run_jetid_veto, load_cpp_utils as load_jet_id_utils  # noqa: E402
 from modules.jet_correction import (
@@ -56,13 +41,13 @@ from modules.jet_correction import (
 )  # noqa: E402
 from modules.noise_filters import run_noise_filters  # noqa: E402
 
-# exit(0)
-
 
 def process_file(dataset, file, outfile, is_data):
-    load_muon_sf_utils(data_folder, is_data=is_data)
-    load_jec_utils(data_folder, is_data=is_data)
-    load_jet_id_utils(data_folder)
+
+    load_pu_utils(data_folder, year)
+    load_muon_sf_utils(data_folder, year, is_data=is_data)
+    load_jet_id_utils(data_folder, year, is_data=is_data)
+    # load_jec_utils(data_folder, is_data=is_data)
 
     df = ROOT.RDataFrame("Events", file)
     # # FIXME DEBUG
@@ -92,7 +77,7 @@ def process_file(dataset, file, outfile, is_data):
     # pfIsoId >= 2 : Loose
     df = df.Define(
         "good_mu",
-        "Muon_pt > 15 && abs(Muon_eta) < 2.4 && Muon_tightId && Muon_pfIsoId >= 4",  # FIXME
+        "Muon_pt > 15 && abs(Muon_eta) < 2.4 && Muon_mediumId && Muon_pfIsoId >= 2",  # FIXME
     )
 
     df = df.Filter("Muon_pt[good_mu].size() == 2")
@@ -166,7 +151,8 @@ def process_file(dataset, file, outfile, is_data):
     )
     mu_cols += ["HasMatching_singleMu"]
 
-    # df = run_jetid_veto(df)
+    df = run_jetid_veto(df, year)
+
     # if is_data:
     #     df = run_jme_data(df)
     # else:
@@ -193,29 +179,30 @@ def process_file(dataset, file, outfile, is_data):
         "run",
         "Rho_fixedGridRhoFastjetAll",
         "PV_npvs",
+        "PV_npvsGood",
     ]
     if not is_data:
         columns += [
             "genWeight",
-            # theory weights
-            "LHEScaleWeight",
-            "LHEPdfWeight",
-            "PSWeight",
-            # gen part
-            "GenPart_pt",
-            "GenPart_eta",
-            "GenPart_phi",
-            "GenPart_mass",
-            "GenPart_pdgId",
-            "GenPart_status",
-            "GenPart_statusFlags",
-            # gen jet
-            "GenJet_pt",
-            "GenJet_eta",
-            "GenJet_phi",
-            "GenJet_mass",
-            "Jet_genJetIdx",
-            "Jet_hadronFlavour",
+            # # theory weights
+            # "LHEScaleWeight",
+            # "LHEPdfWeight",
+            # "PSWeight",
+            # # gen part
+            # "GenPart_pt",
+            # "GenPart_eta",
+            # "GenPart_phi",
+            # "GenPart_mass",
+            # "GenPart_pdgId",
+            # "GenPart_status",
+            # "GenPart_statusFlags",
+            # # gen jet
+            # "GenJet_pt",
+            # "GenJet_eta",
+            # "GenJet_phi",
+            # "GenJet_mass",
+            # "Jet_genJetIdx",
+            # "Jet_hadronFlavour",
         ]
 
         columns += ["weight_sf_pu"]
@@ -254,20 +241,20 @@ def process_file(dataset, file, outfile, is_data):
         "btagPNetB",
         "btagPNetCvL",
         "btagPNetQvG",
-        "chHEF",
-        "neHEF",
-        "chEmEF",
-        "neEmEF",
-        "muEF",
-        "chMultiplicity",
-        "neMultiplicity",
+        # "chHEF",
+        # "neHEF",
+        # "chEmEF",
+        # "neEmEF",
+        # "muEF",
+        # "chMultiplicity",
+        # "neMultiplicity",
         "area",
         "rawFactor",
         # FIXME
-        # "tightId",
-        # "tightLepVetoId",
+        "tightId",
+        "tightLepVetoId",
         # "veto_map",
-        # "veto",
+        "veto",
     ]
 
     # jet_cols += [
@@ -331,23 +318,23 @@ def process_file(dataset, file, outfile, is_data):
 with open(f"{job_folder}/input.json") as f:
     data = json.load(f)
 
-year = "2024"
 
 out_tmp = data["outfile"]
 if "/eos/" in data["outfile"]:
     out_tmp = "output.root"
 
-result = process_file(data["dataset"], data["file"][:], out_tmp, data["is_data"])
+result = process_file(data["dataset"], data["file"][:1], out_tmp, data["is_data"])
 
-if "/eos/" in data["outfile"]:
-    cmd = f"xrdcp {out_tmp} root://eosuser.cern.ch/{data['outfile']}"
-    # run cmd, if any error, remove output.root and raise exception
-    proc = subprocess.run(cmd, shell=True)
-    if proc.returncode != 0:
-        os.remove(out_tmp)
-        raise RuntimeError(f"Failed to copy output file: {cmd}")
+if not DEBUG:
+    if "/eos/" in data["outfile"]:
+        cmd = f"xrdcp {out_tmp} root://eosuser.cern.ch/{data['outfile']}"
+        # run cmd, if any error, remove output.root and raise exception
+        proc = subprocess.run(cmd, shell=True)
+        if proc.returncode != 0:
+            os.remove(out_tmp)
+            raise RuntimeError(f"Failed to copy output file: {cmd}")
 
-os.remove(out_tmp)
+    os.remove(out_tmp)
 
-with open(f"{job_folder}/output.json", "w") as f:
-    json.dump(result, f, indent=2)
+    with open(f"{job_folder}/output.json", "w") as f:
+        json.dump(result, f, indent=2)

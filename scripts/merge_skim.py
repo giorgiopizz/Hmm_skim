@@ -63,6 +63,8 @@ if __name__ == "__main__":
     for ijob in jobs_mapped:
         job_folder = f"condor_jobs/job_{ijob}"
         if not os.path.exists(f"{job_folder}/output.json"):
+            # print in yellow color
+            print(f"\033[93mWarning: output.json not found in job {ijob}\033[0m")
             continue
         with open(f"{job_folder}/output.json") as f:
             if f.read() == "":
@@ -75,13 +77,17 @@ if __name__ == "__main__":
     print(jobs_results)
 
     for ds in jobs_results:
-        jobs_results[ds]["is_data"] = 'Muon0' in ds or 'Muon1' in ds
-            
+        jobs_results[ds]["is_data"] = "Muon0" in ds or "Muon1" in ds
 
     sys.path.insert(0, "productions/")
     from xs import xs
 
-    lumi = 109.98799
+    lumis = {
+        "2024": 109.98799,
+        "2023": 18.0630,
+    }
+
+    lumi = lumis[year]
     final_results = {}
     for dataset in jobs_results:
         final_results[dataset] = {

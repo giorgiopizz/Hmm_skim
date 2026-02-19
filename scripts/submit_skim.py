@@ -63,9 +63,14 @@ if __name__ == "__main__":
         #     # random.Random(i_random).shuffle(fileinfo["path"])
         #     files += [fileinfo["path"][0]]
         #     i_random += 1
-        nevents_per_chunk = 100_000_000
-        if "to2Mu" in dataset:
-            nevents_per_chunk = 5_000_000
+        if year == "2024":
+            nevents_per_chunk = 100_000_000
+            if "to2Mu" in dataset:
+                nevents_per_chunk = 5_000_000
+        else:
+            nevents_per_chunk = 10_000_000
+            if "to2Mu" in dataset:
+                nevents_per_chunk = 5_000_000
         datasets_files[dataset] = merge_files(
             fileset_data[dataset]["files"][:], nevents_per_chunk
         )[:]  # FIXME

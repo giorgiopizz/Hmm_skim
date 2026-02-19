@@ -1,18 +1,18 @@
 import ROOT
 
 
-def load_cpp_utils(data_folder, is_data=False):
-    MUON_SF_FILE = f"{data_folder}/2024/muon_Z.json.gz"
+def load_cpp_utils(data_folder, year, is_data=False):
+    MUON_SF_FILE = f"{data_folder}/{year}/muon_Z.json.gz"
     MUON_ID_TAG = "NUM_MediumID_DEN_TrackerMuons"
     MUON_ISO_TAG = "NUM_LoosePFIso_DEN_MediumID"
     MUON_TRG_TAG = "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"
 
-    # FIXME
-    MUON_ID_TAG = "NUM_TightID_DEN_TrackerMuons"
-    MUON_ISO_TAG = "NUM_TightPFIso_DEN_TightID"
-    MUON_TRG_TAG = "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"
+    # # FIXME
+    # MUON_ID_TAG = "NUM_TightID_DEN_TrackerMuons"
+    # MUON_ISO_TAG = "NUM_TightPFIso_DEN_TightID"
+    # MUON_TRG_TAG = "NUM_IsoMu24_DEN_CutBasedIdTight_and_PFIsoTight"
 
-    MUON_SCARE_FILE = f"{data_folder}/2024/muon_scalesmearing.json.gz"
+    MUON_SCARE_FILE = f"{data_folder}/{year}/muon_scalesmearing.json.gz"
 
     line = f"""
     #include "{data_folder}/modules/muon_scare.cpp"
