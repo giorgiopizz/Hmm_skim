@@ -31,9 +31,9 @@ Samples["Muon1_Run2023C_v4"] = {
 ## DY samples, probably the only ones we can use for now
 ## for the future DYto2Mu should be jet binned, the others may not
 
-Samples["DYto2L_M_50_amcatnloFXFX"] = {
-    "nanoAOD": "/DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM",
-}
+# Samples["DYto2L_M_50_amcatnloFXFX"] = {
+#     "nanoAOD": "/DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM",
+# }
 
 Samples["DYto2L_M_50_0J_amcatnloFXFX"] = {
     "nanoAOD": "/DYto2L-2Jets_MLL-50_0J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v3/NANOAODSIM"
