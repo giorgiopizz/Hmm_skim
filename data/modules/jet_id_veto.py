@@ -57,6 +57,22 @@ def run_jetid_veto(df, year):
         "(Jet_pt > 15) && (Jet_veto_map != 0) && (Jet_tightLepVetoId == 1) && ((Jet_chEmEF + Jet_neEmEF) < 0.9)",
     )
 
+    # filter out events with one jet in the veto region
+    df = df.Filter("Sum(Jet_veto) == 0")
+
+    # check overlap with muons
+    df = df.Define(
+        "Jet_overlap_mu",
+        "(SPRITZ::DeltaR(Jet_eta, Jet_phi, mu1_eta, mu1_phi) < 0.4) || (SPRITZ::DeltaR(Jet_eta, Jet_phi, mu2_eta, mu2_phi) < 0.4)",
+    )
+
+    # jet sel
+
+    df = df.Define(
+        "Jet_veto_no_overlap",
+        "Jet_veto || Jet_overlap_mu",
+    )
+
     # df.Display(["Jet_tightId", "Jet_tightLepVetoId", "Jet_veto_map", "Jet_veto"]).Print()
 
     return df

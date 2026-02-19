@@ -87,3 +87,28 @@ RVecF jet_veto(const std::shared_ptr<const correction::Correction> &ceval_jetvet
     }
     return Jet_veto;
 }
+
+namespace SPRITZ
+{
+    float DeltaPhi(float phi1, float phi2)
+    {
+        float dPhi = phi1 - phi2;
+        if (dPhi > M_PI)
+            dPhi -= 2 * M_PI;
+        else if (dPhi < -M_PI)
+            dPhi += 2 * M_PI;
+        return dPhi;
+    }
+
+    RVecF DeltaR(const RVecF &eta1, const RVecF &phi1, const float eta2, const float phi2)
+    {
+        RVecF result(eta1.size(), 0);
+        for (size_t i = 0; i < eta1.size(); i++)
+        {
+            float dEta = eta1[i] - eta2;
+            float dPhi = DeltaPhi(phi1[i], phi2);
+            result[i] = sqrt(dEta * dEta + dPhi * dPhi);
+        }
+        return result;
+    }
+}

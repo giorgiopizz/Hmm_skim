@@ -72,10 +72,10 @@ def process_file(dataset, file, outfile, is_data):
     df = df.Filter("Electron_pt[good_ele].size() == 0")
 
     # use always BS pt
+    df = df.Redefine("Muon_pt", "Muon_bsConstrainedPt")
+    df = df.Redefine("Muon_ptErr", "Muon_bsConstrainedPtErr")
     df = df.Define("Muon_pt_no_bs", "Muon_pt")
     df = df.Define("Muon_ptErr_no_bs", "Muon_ptErr")
-    # df = df.Redefine("Muon_pt", "Muon_bsConstrainedPt")
-    # df = df.Redefine("Muon_ptErr", "Muon_bsConstrainedPtErr")
 
     # pfIsoId >= 2 : Loose
     df = df.Define(
@@ -144,7 +144,10 @@ def process_file(dataset, file, outfile, is_data):
     df = run_muon_sf(df, is_data, run_syst=run_systematics)
 
     if not is_data:
-        df = df.Define("weight_trigger_SF", "mu_trigger_idx == mu1_trigger_idx ? weight_sf_mu1_trg : weight_sf_mu2_trg")
+        df = df.Define(
+            "weight_trigger_SF",
+            "mu_trigger_idx == mu1_trigger_idx ? weight_sf_mu1_trg : weight_sf_mu2_trg",
+        )
 
     df = df.Define(
         "mu1_p4", "ROOT::Math::PtEtaPhiMVector(mu1_pt, mu1_eta, mu1_phi, mu1_mass)"
@@ -161,27 +164,51 @@ def process_file(dataset, file, outfile, is_data):
             f"pt_{var}_{tag}" for var in ["scale", "res"] for tag in ["up", "down"]
         ]
 
-    # df = df.Define("TrigObj_mask", "TrigObj_id == 13 && (TrigObj_filterBits & 8) != 0")
-
-    # df = df.Define(
-    #     "TrigObj_p4",
-    #     "Construct<ROOT::Math::PtEtaPhiMVector>(TrigObj_pt, TrigObj_eta, TrigObj_phi, ROOT::RVecF(TrigObj_pt.size(), 0.))",
-    # )
-    # df = df.Redefine("TrigObj_p4", "TrigObj_p4[TrigObj_mask]")
-
-    # df = df.Define(
-    #     "mu1_HasMatching_singleMu", "FindMatching(mu1_p4, TrigObj_p4, 0.4) > -1"
-    # )
-    # df = df.Define(
-    #     "mu2_HasMatching_singleMu", "FindMatching(mu2_p4, TrigObj_p4, 0.4) > -1"
-    # )
-
     df = run_jetid_veto(df, year)
 
     # if is_data:
     #     df = run_jme_data(df)
     # else:
     #     df = run_jme_mc(df, run_syst=run_systematics)
+
+    df = df.Define("Jet_good", "Jet_pt > 25 && Jet_tightId && !Jet_veto_no_overlap")
+
+    jet_cols = [
+        "pt",
+        "eta",
+        "phi",
+        "mass",
+        "btagPNetB",
+        "btagPNetCvL",
+        "btagPNetQvG",
+    ]
+    if year == "2024":
+        jet_cols += ["btagUParTAK4B"]
+
+    # jet_cols += [
+    #     "pt_no_corr",
+    #     "mass_no_corr",
+    # ]
+    # if not is_data:
+    #     jet_cols += [
+    #         "pt_jec",
+    #         "mass_jec",
+    #     ]
+    #     if run_systematics:
+    #         # unc
+    #         jet_cols += [
+    #             "pt_jer_down",
+    #             "mass_jer_down",
+    #             "pt_jer_up",
+    #             "mass_jer_up",
+    #             "pt_jes_down",
+    #             "mass_jes_down",
+    #             "pt_jes_up",
+    #             "mass_jes_up",
+    #         ]
+
+    for col in jet_cols:
+        df = df.Redefine(f"Jet_{col}", f"Jet_{col}[Jet_good]")
 
     if not is_data:
         df = df.Define(
@@ -258,55 +285,6 @@ def process_file(dataset, file, outfile, is_data):
                 ]
 
     columns += [f"mu{idx}_{col}" for col in mu_cols for idx in [1, 2]]
-
-    jet_cols = [
-        "pt",
-        "eta",
-        "phi",
-        "mass",
-        "btagPNetB",
-        "btagPNetCvL",
-        "btagPNetQvG",
-        # "chHEF",
-        # "neHEF",
-        # "chEmEF",
-        # "neEmEF",
-        # "muEF",
-        # "chMultiplicity",
-        # "neMultiplicity",
-        "area",
-        "rawFactor",
-        # FIXME
-        "tightId",
-        "tightLepVetoId",
-        # "veto_map",
-        "veto",
-    ]
-
-    # jet_cols += [
-    #     "pt_no_corr",
-    #     "mass_no_corr",
-    # ]
-    # if not is_data:
-    #     jet_cols += [
-    #         "pt_jec",
-    #         "mass_jec",
-    #     ]
-    #     if run_systematics:
-    #         # unc
-    #         jet_cols += [
-    #             "pt_jer_down",
-    #             "mass_jer_down",
-    #             "pt_jer_up",
-    #             "mass_jer_up",
-    #             "pt_jes_down",
-    #             "mass_jes_down",
-    #             "pt_jes_up",
-    #             "mass_jes_up",
-    #         ]
-
-    if year == "2024":
-        jet_cols += ["btagUParTAK4B"]
 
     columns += [f"Jet_{col}" for col in jet_cols]
 
