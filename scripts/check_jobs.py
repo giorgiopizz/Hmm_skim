@@ -7,7 +7,8 @@ if __name__ == "__main__":
     condor_folder = f"condor_jobs/{args.tag}_{args.year}"
     tot = glob.glob(f"{condor_folder}/job_*/input.json")
     err = glob.glob(f"{condor_folder}/job_*/err.txt")
-    missing = set(list(map(lambda x: x.split("/")[1].split("_")[1], tot))) - set(
-        list(map(lambda x: x.split("/")[1].split("_")[1], err))
+    missing = set(list(map(lambda x: x.split("/")[2].split("_")[1], tot))) - set(
+        list(map(lambda x: x.split("/")[2].split("_")[1], err))
     )
+    print('Total jobs', len(tot))
     print("Missing jobs:", missing)

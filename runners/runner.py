@@ -27,7 +27,7 @@ year = args.year
 DEBUG = args.debug
 
 data_folder = "data/"
-data_folder = "modules/"
+module_folder = "modules/"
 job_folder = "."
 run_systematics = True
 run_systematics = False
