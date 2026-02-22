@@ -4,68 +4,38 @@ import argparse
 import sys
 import os
 
-from scripts.submit_skim import base_output_folder
-
-
-def add_dict(d1, d2):
-    if isinstance(d1, dict):
-        d = {}
-        common_keys = set(list(d1.keys())).intersection(list(d2.keys()))
-        for key in common_keys:
-            d[key] = add_dict(d1[key], d2[key])
-        for key in d1:
-            if key in common_keys:
-                continue
-            d[key] = d1[key]
-        for key in d2:
-            if key in common_keys:
-                continue
-            d[key] = d2[key]
-
-        return d
-    elif isinstance(d1, set):
-        return d1.union(d2)
-    else:
-        try:
-            tmp = d1 + d2
-        except Exception as e:
-            print("Error adding")
-            print(d1)
-            print(d2)
-            raise Exception("Error adding", d1, d2, e)
-            tmp = d1
-        return tmp
-
-
-def add_dict_iterable(iterable):
-    tmp = -99999
-    for it in iterable:
-        if tmp == -99999:
-            tmp = it
-        else:
-            tmp = add_dict(tmp, it)
-    return tmp
+from utils.utils import common_args, add_dict_iterable, get_fw_path, get_results_folder
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--year", type=str, required=True, help="Year of the production"
-    )
-    args = parser.parse_args()
+    args = common_args()
     year = args.year
+    tag = args.tag
 
-    with open("condor_jobs/jobs_mapped.json") as f:
+    fw_path = get_fw_path()
+
+    condor_folder = f"{fw_path}/condor_jobs/{tag}_{year}"
+    with open(f"{condor_folder}/jobs_mapped.json") as f:
         jobs_mapped = json.load(f)
 
     # open each output.json from the jobs
     jobs_results = []
     for ijob in jobs_mapped:
-        job_folder = f"condor_jobs/job_{ijob}"
+        job_folder = f"{condor_folder}/job_{ijob}"
         if not os.path.exists(f"{job_folder}/output.json"):
-            # print in yellow color
-            print(f"\033[93mWarning: output.json not found in job {ijob}\033[0m")
-            continue
+            with open(f"{job_folder}/input.json") as f:
+                input_data = json.load(f)
+            if input_data["is_data"]:
+                # for data raise error
+                print(
+                    f"\033[91mError: output.json not found in job {ijob} for dataset {input_data['dataset']}\033[0m"
+                )
+                exit(1)
+            else:
+                # for mc missing it's ok
+                print(f"\033[93mWarning: output.json not found in job {ijob}\033[0m")
+                continue
+
         with open(f"{job_folder}/output.json") as f:
             if f.read() == "":
                 print(f"Error: empty output.json in job {ijob}")
@@ -76,16 +46,9 @@ if __name__ == "__main__":
     jobs_results = add_dict_iterable(jobs_results)
     print(jobs_results)
 
-    for ds in jobs_results:
-        jobs_results[ds]["is_data"] = "Muon0" in ds or "Muon1" in ds
-
-    sys.path.insert(0, "productions/")
+    sys.path.insert(0, f"{fw_path}/productions")
     from xs import xs
-
-    lumis = {
-        "2024": 109.98799,
-        "2023": 18.0630,
-    }
+    from lumis import lumis
 
     lumi = lumis[year]
     final_results = {}
@@ -99,6 +62,6 @@ if __name__ == "__main__":
         rescale = xs[dataset] * 1000 * lumi / jobs_results[dataset]["sumw"]
         final_results[dataset]["rescale"] = rescale
         final_results[dataset]["sumw"] = jobs_results[dataset]["sumw"]
-    with open(f"{base_output_folder}/{year}/results.json", "w") as f:
+    with open(f"{get_results_folder(tag, year)}/results.json", "w") as f:
         json.dump(final_results, f, indent=2)
     print(json.dumps(final_results, indent=2))

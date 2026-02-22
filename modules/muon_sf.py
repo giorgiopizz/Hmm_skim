@@ -1,7 +1,7 @@
 import ROOT
 
 
-def load_cpp_utils(data_folder, year, is_data=False):
+def load_cpp_utils(module_folder, data_folder, year, is_data=False):
     MUON_SF_FILE = f"{data_folder}/{year}/muon_Z.json.gz"
     MUON_ID_TAG = "NUM_MediumID_DEN_TrackerMuons"
     MUON_ISO_TAG = "NUM_LoosePFIso_DEN_MediumID"
@@ -15,7 +15,7 @@ def load_cpp_utils(data_folder, year, is_data=False):
     MUON_SCARE_FILE = f"{data_folder}/{year}/muon_scalesmearing.json.gz"
 
     line = f"""
-    #include "{data_folder}/modules/muon_scare.cpp"
+    #include "{module_folder}/muon_scare.cpp"
     """
     ROOT.gInterpreter.Declare(line)
     print("Loaded Muon C++ modules")
@@ -28,7 +28,6 @@ def load_cpp_utils(data_folder, year, is_data=False):
 
     auto cset_muon_scare = correction::CorrectionSet::from_file("{MUON_SCARE_FILE}");
     auto muon_scare = MuonScaRe(std::move(cset_muon_scare));
-
     """
     ROOT.gInterpreter.Declare(line)
 
@@ -38,30 +37,30 @@ def run_muon_sf(df, is_data=False, run_syst=True):
         for mu_idx in [1, 2]:
             df = df.Define(
                 f"weight_sf_mu{mu_idx}_id",
-                f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt, "nominal"}})',
+                f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "nominal"}})',
             )
             if run_syst:
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_id_up",
-                    f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt, "systup"}})',
+                    f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "systup"}})',
                 )
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_id_down",
-                    f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt, "systdown"}})',
+                    f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "systdown"}})',
                 )
 
             df = df.Define(
                 f"weight_sf_mu{mu_idx}_iso",
-                f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt, "nominal"}})',
+                f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "nominal"}})',
             )
             if run_syst:
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_iso_up",
-                    f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt, "systup"}})',
+                    f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "systup"}})',
                 )
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_iso_down",
-                    f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt, "systdown"}})',
+                    f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "systdown"}})',
                 )
 
             df = df.Define(

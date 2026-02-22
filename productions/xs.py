@@ -35,8 +35,10 @@ xs["ZZto2Nu2Q_powheg"] = 4.826
 
 xs["TbarBtoLminusNuB_s_channel_4FS"] = 4.534 * (1 - 0.6741)
 xs["TBbartoLplusNuBbar_s_channel_4FS"] = 7.244 * (1 - 0.6741)
+xs["TbarBQ_t_channel_4FS"] = 87.2
 xs["TbarBQtoLNu_t_channel_4FS"] = 23.34
 xs["TbarBQto2Q_t_channel_4FS"] = 46.73
+xs["TBbarQ_t_channel_4FS"] = 145.0
 xs["TBbarQtoLNu_t_channel_4FS"] = 38.6
 xs["TBbarQto2Q_t_channel_4FS"] = 77.26
 

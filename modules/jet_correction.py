@@ -1,13 +1,13 @@
 import ROOT
 
 
-def load_cpp_utils(data_folder, year, is_data=False):
+def load_cpp_utils(module_folder, data_folder, year, is_data=False):
     JERC_FILE = f"{data_folder}/{year}/jet_jerc.json.gz"
     JERSMEAR_FILE = f"{data_folder}/{year}/jer_smear.json.gz"
     JER_JET_ALGO = "AK4PFPuppi"
 
     line = f"""
-    #include "{data_folder}/modules/jet_correction.cpp"
+    #include "{module_folder}/jet_correction.cpp"
     """
     ROOT.gInterpreter.Declare(line)
 

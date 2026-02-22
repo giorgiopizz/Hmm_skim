@@ -26,6 +26,11 @@ if __name__ == "__main__":
         result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
         dataset_info = json.loads(result.stdout)
         print(dataset)
-        file = dataset_info["data"][0]["file"][0]["name"]
+        try:
+            file = dataset_info["data"][0]["file"][0]["name"]
+        except Exception as e:
+            # print in red error message
+            print(f"\033[91mError getting file for dataset {dataset}\033[0m")
+            continue
 
         files[key] = file

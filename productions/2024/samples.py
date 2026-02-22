@@ -4,53 +4,69 @@ Samples = {}
 
 Samples["Muon0_Run2024C_v1"] = {
     "nanoAOD": "/Muon0/Run2024C-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon0_Run2024D_v1"] = {
     "nanoAOD": "/Muon0/Run2024D-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon0_Run2024E_v1"] = {
     "nanoAOD": "/Muon0/Run2024E-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon0_Run2024F_v1"] = {
     "nanoAOD": "/Muon0/Run2024F-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon0_Run2024G_v1"] = {
     "nanoAOD": "/Muon0/Run2024G-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon0_Run2024H_v1"] = {
     "nanoAOD": "/Muon0/Run2024H-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon0_Run2024I_v1"] = {
     "nanoAOD": "/Muon0/Run2024I-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 # FIXME also v2 has to be used?
 Samples["Muon0_Run2024I_v2"] = {
     "nanoAOD": "/Muon0/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD",
+    "is_data": True,
 }
 
 Samples["Muon1_Run2024C_v1"] = {
     "nanoAOD": "/Muon1/Run2024C-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon1_Run2024D_v1"] = {
     "nanoAOD": "/Muon1/Run2024D-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon1_Run2024E_v1"] = {
     "nanoAOD": "/Muon1/Run2024E-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon1_Run2024F_v1"] = {
     "nanoAOD": "/Muon1/Run2024F-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon1_Run2024G_v1"] = {
     "nanoAOD": "/Muon1/Run2024G-MINIv6NANOv15-v2/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon1_Run2024H_v1"] = {
     "nanoAOD": "/Muon1/Run2024H-MINIv6NANOv15-v2/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon1_Run2024I_v1"] = {
     "nanoAOD": "/Muon1/Run2024I-MINIv6NANOv15-v1/NANOAOD",
+    "is_data": True,
 }
 Samples["Muon1_Run2024I_v2"] = {
     "nanoAOD": "/Muon1/Run2024I-MINIv6NANOv15_v2-v1/NANOAOD",
+    "is_data": True,
 }
 
 ## DY samples, probably the only ones we can use for now
@@ -238,21 +254,21 @@ Samples["GluGluHto2Mu"] = {
     "nanoAOD": "/GluGluH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
 }
 
-# VH
-Samples["WplusHto2Mu"] = {
-    "nanoAOD": "/WplusH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
-}
-Samples["WminusHto2Mu"] = {
-    "nanoAOD": "/WminusH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
-}
-Samples["ZHto2Mu"] = {
-    "nanoAOD": "/ZH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
-}
+# # VH
+# Samples["WplusHto2Mu"] = {
+#     "nanoAOD": "/WplusH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
+# }
+# Samples["WminusHto2Mu"] = {
+#     "nanoAOD": "/WminusH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
+# }
+# Samples["ZHto2Mu"] = {
+#     "nanoAOD": "/ZH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
+# }
 
-# FIXME should be TTHto2Mu
-Samples["ttZHto2Mu"] = {
-    "nanoAOD": "/TTH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
-}
+# # FIXME should be TTHto2Mu
+# Samples["ttZHto2Mu"] = {
+#     "nanoAOD": "/TTH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+# }
 
 # ggZH
 # FIXME missing sample

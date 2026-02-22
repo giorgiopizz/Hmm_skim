@@ -12,24 +12,36 @@ correctionlib.register_pyroot_binding()
 
 ROOT.gROOT.SetBatch(True)
 
-# ROOT.EnableImplicitMT(True)
 
-year = "2023"
+argparsese = argparse.ArgumentParser()
+argparsese.add_argument(
+    "--year", type=str, required=True, help="Year of the production"
+)
+argparsese.add_argument(
+    "--debug", action="store_true", help="Run in debug mode (process only one file)"
+)
+
+
+args = argparsese.parse_args()
+year = args.year
+DEBUG = args.debug
+
 data_folder = "data/"
+data_folder = "modules/"
 job_folder = "."
 run_systematics = True
 run_systematics = False
 
-DEBUG = False
-# DEBUG = True
-
 if DEBUG:
+    tag = "v1"
     # # # FIXME comment out
     data_folder = "../data/"
-    job_folder = "../condor_jobs/job_20/"
+    module_folder = "../modules/"
+    condor_folder = f"../condor_jobs/{tag}_{year}/"
+    job_folder = f"{condor_folder}/job_20/"
     # # job_folder = "../condor_jobs/job_11/"
     # job_folder = "../condor_jobs/job_0/"
-    # job_folder = "../condor_jobs/job_95/"
+    # job_folder = f"{condor_folder}/job_95/"
 
 
 sys.path.append(data_folder)
@@ -40,22 +52,26 @@ from modules.jet_correction import (
     run_jme_mc,
     run_jme_data,
     load_cpp_utils as load_jec_utils,
-)  # noqa: E402
+)
 from modules.noise_filters import run_noise_filters  # noqa: E402
+from modules.btag import run_btag  # noqa: E402
+from modules.vbf_selector import (
+    run_vbf_selector,
+    load_cpp_utils as load_vbf_selector_utils,
+)  # noqa: E402
 
 
 def process_file(dataset, file, outfile, is_data):
 
-    load_pu_utils(data_folder, year)
-    load_muon_sf_utils(data_folder, year, is_data=is_data)
-    load_jet_id_utils(data_folder, year, is_data=is_data)
-    load_jec_utils(data_folder, year, is_data=is_data)
+    load_pu_utils(module_folder, data_folder, year)
+    load_muon_sf_utils(module_folder, data_folder, year, is_data=is_data)
+    load_jet_id_utils(module_folder, data_folder, year, is_data=is_data)
+    load_jec_utils(module_folder, data_folder, year, is_data=is_data)
+    load_vbf_selector_utils(module_folder, data_folder, year, is_data=is_data)
 
     # exit()
 
     df = ROOT.RDataFrame("Events", file)
-    # # FIXME DEBUG
-    # df = df.Range(1000)
 
     if not is_data:
         sumw = df.Sum("genWeight")
@@ -63,9 +79,18 @@ def process_file(dataset, file, outfile, is_data):
         sumw = df.Define("genWeight", "1").Sum("genWeight")
     nevents = df.Count()
 
+    # Noise filters
     df = run_noise_filters(df, is_data=is_data)
     df = df.Filter("good_event")
 
+    # Pass trigger
+    df = df.Filter("HLT_IsoMu24")
+
+    # good lumi
+    if is_data:
+        df = df.Filter("lumi_filter.Pass(run, luminosityBlock)")
+
+    # Electron veto
     df = df.Define(
         "good_ele",
         "Electron_pt > 20 && abs(Electron_eta) < 2.5 && Electron_mvaIso_WP90",
@@ -81,15 +106,10 @@ def process_file(dataset, file, outfile, is_data):
     # pfIsoId >= 2 : Loose
     df = df.Define(
         "good_mu",
-        "Muon_pt > 15 && abs(Muon_eta) < 2.4 && Muon_mediumId && Muon_pfIsoId >= 2",  # FIXME
+        "Muon_pt > 10 && abs(Muon_eta) < 2.4 && Muon_mediumId && Muon_pfIsoId >= 2",  # FIXME
     )
 
     df = df.Filter("Muon_pt[good_mu].size() == 2")
-
-    df = df.Filter("HLT_IsoMu24")
-
-    if is_data:
-        df = df.Filter("lumi_filter.Pass(run, luminosityBlock)")
 
     mu_cols = [
         "pt",
@@ -116,12 +136,12 @@ def process_file(dataset, file, outfile, is_data):
 
     df = df.Define(
         # "muon_order", "Argsort(Muon_pt[good_mu], [](double x, double y) {return x > y;})"
-        "muon_order",
-        "Argsort(Muon_pt[good_mu])",
+        "Muon_order",
+        "Reverse(Argsort(Muon_pt[good_mu]))",
     )
     for col in mu_cols:
-        df = df.Define(f"mu1_{col}", f"Take(Muon_{col}[good_mu], muon_order)[1]")
-        df = df.Define(f"mu2_{col}", f"Take(Muon_{col}[good_mu], muon_order)[0]")
+        df = df.Define(f"mu1_{col}", f"Take(Muon_{col}[good_mu], Muon_order)[0]")
+        df = df.Define(f"mu2_{col}", f"Take(Muon_{col}[good_mu], Muon_order)[1]")
 
     # OS
     df = df.Filter("mu1_charge != mu2_charge")
@@ -143,12 +163,31 @@ def process_file(dataset, file, outfile, is_data):
 
     # apply SFs and ScaRe
     df = run_muon_sf(df, is_data, run_syst=run_systematics)
+    mu_cols += ["pt_no_corr"]
+    df = df.Define("Muon_pt_no_corr", "Muon_pt")
+
+    if not is_data and run_systematics:
+        mu_cols += [
+            f"pt_{var}_{tag}" for var in ["scale", "res"] for tag in ["up", "down"]
+        ]
 
     if not is_data:
         df = df.Define(
             "weight_trigger_SF",
             "mu_trigger_idx == mu1_trigger_idx ? weight_sf_mu1_trg : weight_sf_mu2_trg",
         )
+
+    # resort the muons
+    for col in mu_cols:
+        T = df.GetColumnType(f"mu1_{col}")
+        df = df.Redefine(
+            f"Muon_{col}", f"ROOT::VecOps::RVec<{T}> {{mu1_{col}, mu2_{col}}}"
+        )
+
+    df = df.Redefine("Muon_order", "Reverse(Argsort(Muon_pt))")
+    for col in mu_cols:
+        df = df.Redefine(f"mu1_{col}", f"Take(Muon_{col}, Muon_order)[0]")
+        df = df.Redefine(f"mu2_{col}", f"Take(Muon_{col}, Muon_order)[1]")
 
     df = df.Define(
         "mu1_p4", "ROOT::Math::PtEtaPhiMVector(mu1_pt, mu1_eta, mu1_phi, mu1_mass)"
@@ -159,20 +198,17 @@ def process_file(dataset, file, outfile, is_data):
     df = df.Define("mll", "(mu1_p4 + mu2_p4).M()")
     df = df.Filter("mll > 50 && mll < 200")
 
-    mu_cols += ["pt_no_corr"]
-    if not is_data and run_systematics:
-        mu_cols += [
-            f"pt_{var}_{tag}" for var in ["scale", "res"] for tag in ["up", "down"]
-        ]
-
     df = run_jetid_veto(df, year)
+
+    # filter out events with one jet in the veto region
+    df = df.Filter("Sum(Jet_veto) == 0")
 
     if is_data:
         df = run_jme_data(df, year)
     else:
         df = run_jme_mc(df, year, run_syst=run_systematics)
 
-    df = df.Define("Jet_good", "Jet_pt > 25 && Jet_tightId && !Jet_veto_no_overlap")
+    df = df.Define("Jet_good", "Jet_pt > 25 && Jet_tightId && !Jet_veto_or_overlap")
 
     jet_cols = [
         "pt",
@@ -191,30 +227,40 @@ def process_file(dataset, file, outfile, is_data):
             "hadronFlavour",
         ]
 
-    # jet_cols += [
-    #     "pt_no_corr",
-    #     "mass_no_corr",
-    # ]
-    # if not is_data:
-    #     jet_cols += [
-    #         "pt_jec",
-    #         "mass_jec",
-    #     ]
-    #     if run_systematics:
-    #         # unc
-    #         jet_cols += [
-    #             "pt_jer_down",
-    #             "mass_jer_down",
-    #             "pt_jer_up",
-    #             "mass_jer_up",
-    #             "pt_jes_down",
-    #             "mass_jes_down",
-    #             "pt_jes_up",
-    #             "mass_jes_up",
-    #         ]
+    jet_cols += [
+        "pt_no_corr",
+        "mass_no_corr",
+    ]
+    if not is_data:
+        jet_cols += [
+            "pt_jec",
+            "mass_jec",
+        ]
+        if run_systematics:
+            # unc
+            jet_cols += [
+                "pt_jer_down",
+                "mass_jer_down",
+                "pt_jer_up",
+                "mass_jer_up",
+                "pt_jes_down",
+                "mass_jes_down",
+                "pt_jes_up",
+                "mass_jes_up",
+            ]
 
+    df = df.Define("Jet_order", "Reverse(Argsort(Jet_pt[Jet_good]))")
     for col in jet_cols:
-        df = df.Redefine(f"Jet_{col}", f"Jet_{col}[Jet_good]")
+        df = df.Redefine(f"Jet_{col}", f"Take(Jet_{col}[Jet_good], Jet_order)")
+
+    df = run_vbf_selector(df, year)
+    jet_cols += ["vbf_idx1", "vbf_idx2"]
+
+    df = run_btag(df, year)
+    jet_cols += ["btag_M"]
+
+    # # filter btagged jets
+    # df = df.Filter("Sum(Jet_btagged) == 0")
 
     if not is_data:
         df = df.Define(
@@ -310,6 +356,7 @@ def process_file(dataset, file, outfile, is_data):
     nevents = nevents.GetValue()
     nevents_after = nevents_after.GetValue()
     values = {
+        "is_data": is_data,
         "sumw": sumw,
         "nevents_before": nevents,
         "nevents_after": nevents_after,

@@ -1,7 +1,7 @@
 import ROOT
 
 
-def load_cpp_utils(data_folder, year):
+def load_cpp_utils(module_folder, data_folder, year):
     golden_files = {
         "2024": "Cert_Collisions2024_378981_386951_Golden.json",
         "2023": "Cert_Collisions2023_366442_370790_Golden.json",
@@ -24,8 +24,8 @@ def load_cpp_utils(data_folder, year):
     golden_file = golden_files[year]
 
     line = f"""
-    #include "{data_folder}/modules/trig_match.cpp"
-    #include "{data_folder}/modules/lumi.h"
+    #include "{module_folder}/trig_match.cpp"
+    #include "{module_folder}/lumi.h"
 
     auto cset_pu = correction::CorrectionSet::from_file("{pu_file}");
     auto ceval_pu = cset_pu->at("{pu_json}");

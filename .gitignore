@@ -5,3 +5,5 @@
 special_start.sh
 productions/*/fileset.json
 spritz_env/**
+tests/**
+*.root
