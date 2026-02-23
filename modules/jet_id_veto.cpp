@@ -1,3 +1,5 @@
+#ifndef JET_ID_VETO_H
+#define JET_ID_VETO_H
 #include <tuple>
 
 using RVecB = ROOT::VecOps::RVec<Bool_t>;
@@ -106,15 +108,21 @@ namespace SPRITZ
         return dPhi;
     }
 
+    float DeltaR(const float eta1, const float phi1, const float eta2, const float phi2)
+    {
+        float dEta = eta1 - eta2;
+        float dPhi = DeltaPhi(phi1, phi2);
+        return sqrt(dEta * dEta + dPhi * dPhi);
+    }
+
     RVecF DeltaR(const RVecF &eta1, const RVecF &phi1, const float eta2, const float phi2)
     {
         RVecF result(eta1.size(), 0);
         for (size_t i = 0; i < eta1.size(); i++)
         {
-            float dEta = eta1[i] - eta2;
-            float dPhi = DeltaPhi(phi1[i], phi2);
-            result[i] = sqrt(dEta * dEta + dPhi * dPhi);
+            result[i] = DeltaR(eta1[i], phi1[i], eta2, phi2);
         }
         return result;
     }
 }
+#endif

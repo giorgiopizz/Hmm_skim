@@ -15,7 +15,11 @@ for lep in ["E", "Mu", "Tau"]:
 
 for lep in ["E", "Mu", "Tau"]:
     xs[f"WTo{lep}Nu_amcatnloFXFX"] = 9013.3 + 12128.4
-xs[f"WToLNu_amcatnloFXFX"] = (9013.3 + 12128.4) * 3
+xs["WToLNu_amcatnloFXFX"] = (9013.3 + 12128.4) * 3
+
+xs["WToLNu_0J_amcatnloFXFX"] = 55760.0
+xs["WToLNu_1J_amcatnloFXFX"] = 9529.0
+xs["WToLNu_2J_amcatnloFXFX"] = 3532.0
 
 xs["TTto2L2Nu"] = 923.6 * (1 - 0.6741) * (1 - 0.6741)
 xs["TTto4Q"] = 923.6 * 0.6741 * 0.6741

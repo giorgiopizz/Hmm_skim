@@ -53,10 +53,21 @@ Samples["DYto2L_M_50_2J_amcatnloFXFX"] = {
     "nanoAOD": "/DYto2L-2Jets_MLL-50_2J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v4/NANOAODSIM"
 }
 
-## W*jets
-Samples["WToLNu_amcatnloFXFX"] = {
-    "nanoAOD": "/WtoLNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v15-v2/NANOAODSIM"
+# ## W*jets
+# Samples["WToLNu_amcatnloFXFX"] = {
+#     "nanoAOD": "/WtoLNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v15-v2/NANOAODSIM"
+# }
+
+Samples['WToLNu_0J_amcatnloFXFX'] = {
+    'nanoAOD': '/WtoLNu-2Jets_0J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v3/NANOAODSIM'
 }
+Samples['WToLNu_1J_amcatnloFXFX'] = {
+    'nanoAOD': '/WtoLNu-2Jets_1J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM'
+}
+Samples['WToLNu_2J_amcatnloFXFX'] = {
+    'nanoAOD': '/WtoLNu-2Jets_2J_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/Run3Summer23NanoAODv12-130X_mcRun3_2023_realistic_v14-v2/NANOAODSIM'
+}
+
 
 ## TT samples
 Samples["TTto2L2Nu"] = {

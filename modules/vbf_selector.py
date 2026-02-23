@@ -13,6 +13,8 @@ def run_vbf_selector(df, year):
     df = df.Define(
         "Jet_vbf_indices", "GetVBFJetIndices(Jet_pt, Jet_eta, Jet_phi, Jet_mass)"
     )
-    df = df.Define("Jet_vbf_idx1", "std::get<0>(Jet_vbf_indices)")
-    df = df.Define("Jet_vbf_idx2", "std::get<1>(Jet_vbf_indices)")
+    df = df.Define("vbf_jet_idx1", "std::get<0>(Jet_vbf_indices)")
+    df = df.Define("vbf_jet_idx2", "std::get<1>(Jet_vbf_indices)")
+    df = df.Define("vbf_mjj", "std::get<2>(Jet_vbf_indices)")
+    df = df.Define("vbf_detajj", "std::get<3>(Jet_vbf_indices)")
     return df

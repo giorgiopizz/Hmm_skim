@@ -1,8 +1,8 @@
 
-std::tuple<int, int> GetVBFJetIndices(const RVecF &Jet_pt, const RVecF &Jet_eta,
-                                      const RVecF &Jet_phi, const RVecF &Jet_mass)
+std::tuple<int, int, float, float> GetVBFJetIndices(const RVecF &Jet_pt, const RVecF &Jet_eta,
+                                                    const RVecF &Jet_phi, const RVecF &Jet_mass)
 {
-    std::tuple<int, int> jetIndices(-1, -1);
+    std::tuple<int, int, float, float> result(-1, -1, 0, 0);
     // make PtEtaPhiMVector of jets
     std::vector<ROOT::Math::PtEtaPhiMVector> jets;
     for (size_t i = 0; i < Jet_pt.size(); ++i)
@@ -31,10 +31,10 @@ std::tuple<int, int> GetVBFJetIndices(const RVecF &Jet_pt, const RVecF &Jet_eta,
             if (mjj > maxMjj)
             {
                 maxMjj = mjj;
-                jetIndices = std::make_tuple(i, j);
+                result = std::make_tuple(i, j, mjj, detajj);
             }
         }
     }
 
-    return jetIndices;
+    return result;
 }

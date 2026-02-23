@@ -41,7 +41,7 @@ if DEBUG:
     job_folder = f"{condor_folder}/job_20/"
     # # job_folder = "../condor_jobs/job_11/"
     # job_folder = "../condor_jobs/job_0/"
-    # job_folder = f"{condor_folder}/job_95/"
+    job_folder = f"{condor_folder}/job_95/"
 
 
 sys.path.append(data_folder)
@@ -59,6 +59,10 @@ from modules.vbf_selector import (
     run_vbf_selector,
     load_cpp_utils as load_vbf_selector_utils,
 )  # noqa: E402
+from modules.fsr_recovery import (
+    run_fsr_recovery,
+    load_cpp_utils as load_fsr_recovery_utils,
+)  # noqa: E402
 
 
 def process_file(dataset, file, outfile, is_data):
@@ -68,6 +72,7 @@ def process_file(dataset, file, outfile, is_data):
     load_jet_id_utils(module_folder, data_folder, year, is_data=is_data)
     load_jec_utils(module_folder, data_folder, year, is_data=is_data)
     load_vbf_selector_utils(module_folder, data_folder, year, is_data=is_data)
+    load_fsr_recovery_utils(module_folder)
 
     # exit()
 
@@ -89,6 +94,15 @@ def process_file(dataset, file, outfile, is_data):
     # good lumi
     if is_data:
         df = df.Filter("lumi_filter.Pass(run, luminosityBlock)")
+
+    columns = [
+        "event",
+        "luminosityBlock",
+        "run",
+        "Rho_fixedGridRhoFastjetAll",
+        "PV_npvs",
+        "PV_npvsGood",
+    ]
 
     # Electron veto
     df = df.Define(
@@ -160,6 +174,14 @@ def process_file(dataset, file, outfile, is_data):
         "mu_trigger_idx", "mu1_pt > mu2_pt ? mu1_trigger_idx : mu2_trigger_idx"
     )
     df = df.Filter("mu_trigger_idx >= 0")
+
+    df = run_fsr_recovery(df)
+    mu_cols += [f"{var}_no_fsr" for var in ["pt", "eta", "phi", "mass"]] + [
+        "is_fsr_recovered"
+    ]
+    for var in ["pt", "eta", "phi", "mass"]:
+        df = df.Define(f"Muon_{var}_no_fsr", f"Muon_{var}")
+    df = df.Define("Muon_is_fsr_recovered", "RVecB(Muon_pt.size(), false)")
 
     # apply SFs and ScaRe
     df = run_muon_sf(df, is_data, run_syst=run_systematics)
@@ -254,7 +276,7 @@ def process_file(dataset, file, outfile, is_data):
         df = df.Redefine(f"Jet_{col}", f"Take(Jet_{col}[Jet_good], Jet_order)")
 
     df = run_vbf_selector(df, year)
-    jet_cols += ["vbf_idx1", "vbf_idx2"]
+    columns += ["vbf_jet_idx1", "vbf_jet_idx2", "vbf_mjj", "vbf_detajj"]
 
     df = run_btag(df, year)
     jet_cols += ["btag_M"]
@@ -277,14 +299,6 @@ def process_file(dataset, file, outfile, is_data):
                 'ceval_pu->evaluate({Pileup_nTrueInt, "down"})',
             )
 
-    columns = [
-        "event",
-        "luminosityBlock",
-        "run",
-        "Rho_fixedGridRhoFastjetAll",
-        "PV_npvs",
-        "PV_npvsGood",
-    ]
     if not is_data:
         columns += [
             "genWeight",
