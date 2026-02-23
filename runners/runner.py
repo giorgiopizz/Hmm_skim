@@ -41,7 +41,7 @@ if DEBUG:
     job_folder = f"{condor_folder}/job_20/"
     # # job_folder = "../condor_jobs/job_11/"
     # job_folder = "../condor_jobs/job_0/"
-    # job_folder = f"{condor_folder}/job_95/"
+    job_folder = f"{condor_folder}/job_95/"
 
 
 sys.path.append(data_folder)
@@ -197,6 +197,7 @@ def process_file(dataset, file, outfile, is_data):
             f"pt_{var}_{tag}" for var in ["scale", "res"] for tag in ["up", "down"]
         ]
 
+    # FIXME will need to run also on variations of mu_pt
     df = run_fsr_recovery(df)
     mu_cols += [f"{var}_no_fsr" for var in ["pt", "eta", "phi", "mass"]] + [
         "is_fsr_recovered"
@@ -236,7 +237,27 @@ def process_file(dataset, file, outfile, is_data):
     else:
         df = run_jme_mc(df, year, run_syst=run_systematics)
 
-    df = df.Define("Jet_good", "Jet_pt > 25 && Jet_tightId && !Jet_veto_or_overlap")
+    df = df.Define(
+        "Jet_in_horn",
+        "(abs(Jet_eta) >= 2.5) && (abs(Jet_eta) < 3.0)",
+    )
+    df = df.Define(
+        "Jet_in_HF",
+        "(abs(Jet_eta) >= 3.0) && (abs(Jet_eta) < 5.0)",
+    )
+
+    if year == "2024":
+        df = df.Define(
+            "Jet_bad",
+            "(Jet_pt < 50) && Jet_in_horn",
+        )
+    else:
+        df = df.Define(
+            "Jet_bad",
+            "(Jet_pt < 50) && (Jet_in_horn || Jet_in_HF)",
+        )
+
+    df = df.Define("Jet_good", "Jet_pt > 25 && Jet_tightId && !Jet_veto_or_overlap && !Jet_bad")
 
     jet_cols = [
         "pt",

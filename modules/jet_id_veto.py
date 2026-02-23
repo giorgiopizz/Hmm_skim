@@ -64,30 +64,8 @@ def run_jetid_veto(df, year):
     )
 
     df = df.Define(
-        "Jet_in_horn",
-        "(abs(Jet_eta) > 2.5) && (abs(Jet_eta) < 3.0)",
-    )
-    df = df.Define(
-        "Jet_in_HF",
-        "(abs(Jet_eta) > 3.0) && (abs(Jet_eta) < 5.0)",
-    )
-
-    if year == "2024":
-        df = df.Define(
-            "Jet_bad",
-            "(Jet_pt <= 50) && Jet_in_horn",
-        )
-    else:
-        df = df.Define(
-            "Jet_bad",
-            "(Jet_pt <= 50) && (Jet_in_horn || Jet_in_HF)",
-        )
-
-    # jet sel
-
-    df = df.Define(
         "Jet_veto_or_overlap",
-        "Jet_veto || Jet_overlap_mu || Jet_bad",
+        "Jet_veto || Jet_overlap_mu",
     )
 
     # df.Display(["Jet_tightId", "Jet_tightLepVetoId", "Jet_veto_map", "Jet_veto"]).Print()
