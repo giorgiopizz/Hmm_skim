@@ -46,7 +46,11 @@ if DEBUG:
 
 sys.path.append(data_folder)
 from modules.pu import load_cpp_utils as load_pu_utils  # noqa: E402
-from modules.muon_sf import run_muon_sf, run_muon_scare, load_cpp_utils as load_muon_sf_utils  # noqa: E402
+from modules.muon_sf import (
+    run_muon_sf,
+    run_muon_scare,
+    load_cpp_utils as load_muon_sf_utils,
+)  # noqa: E402
 from modules.jet_id_veto import run_jetid_veto, load_cpp_utils as load_jet_id_utils  # noqa: E402
 from modules.jet_correction import (
     run_jme_mc,
@@ -177,13 +181,11 @@ def process_file(dataset, file, outfile, is_data):
 
     df = run_muon_sf(df, year, is_data=is_data, run_syst=run_systematics)
 
-    df = run_fsr_recovery(df)
-    mu_cols += [f"{var}_no_fsr" for var in ["pt", "eta", "phi", "mass"]] + [
-        "is_fsr_recovered"
-    ]
-    for var in ["pt", "eta", "phi", "mass"]:
-        df = df.Define(f"Muon_{var}_no_fsr", f"Muon_{var}")
-    df = df.Define("Muon_is_fsr_recovered", "RVecB(Muon_pt.size(), false)")
+    if not is_data:
+        df = df.Define(
+            "weight_trigger_SF",
+            "mu_trigger_idx == mu1_trigger_idx ? weight_sf_mu1_trg : weight_sf_mu2_trg",
+        )
 
     # apply ScaRe
     df = run_muon_scare(df, is_data, run_syst=run_systematics)
@@ -195,11 +197,13 @@ def process_file(dataset, file, outfile, is_data):
             f"pt_{var}_{tag}" for var in ["scale", "res"] for tag in ["up", "down"]
         ]
 
-    if not is_data:
-        df = df.Define(
-            "weight_trigger_SF",
-            "mu_trigger_idx == mu1_trigger_idx ? weight_sf_mu1_trg : weight_sf_mu2_trg",
-        )
+    df = run_fsr_recovery(df)
+    mu_cols += [f"{var}_no_fsr" for var in ["pt", "eta", "phi", "mass"]] + [
+        "is_fsr_recovered"
+    ]
+    for var in ["pt", "eta", "phi", "mass"]:
+        df = df.Define(f"Muon_{var}_no_fsr", f"Muon_{var}")
+    df = df.Define("Muon_is_fsr_recovered", "RVecB(Muon_pt.size(), false)")
 
     # resort the muons
     for col in mu_cols:
