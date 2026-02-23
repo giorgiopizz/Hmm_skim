@@ -41,12 +41,12 @@ if DEBUG:
     job_folder = f"{condor_folder}/job_20/"
     # # job_folder = "../condor_jobs/job_11/"
     # job_folder = "../condor_jobs/job_0/"
-    job_folder = f"{condor_folder}/job_95/"
+    # job_folder = f"{condor_folder}/job_95/"
 
 
 sys.path.append(data_folder)
 from modules.pu import load_cpp_utils as load_pu_utils  # noqa: E402
-from modules.muon_sf import run_muon_sf, load_cpp_utils as load_muon_sf_utils  # noqa: E402
+from modules.muon_sf import run_muon_sf, run_muon_scare, load_cpp_utils as load_muon_sf_utils  # noqa: E402
 from modules.jet_id_veto import run_jetid_veto, load_cpp_utils as load_jet_id_utils  # noqa: E402
 from modules.jet_correction import (
     run_jme_mc,
@@ -175,6 +175,8 @@ def process_file(dataset, file, outfile, is_data):
     )
     df = df.Filter("mu_trigger_idx >= 0")
 
+    df = run_muon_sf(df, year, is_data=is_data, run_syst=run_systematics)
+
     df = run_fsr_recovery(df)
     mu_cols += [f"{var}_no_fsr" for var in ["pt", "eta", "phi", "mass"]] + [
         "is_fsr_recovered"
@@ -183,8 +185,8 @@ def process_file(dataset, file, outfile, is_data):
         df = df.Define(f"Muon_{var}_no_fsr", f"Muon_{var}")
     df = df.Define("Muon_is_fsr_recovered", "RVecB(Muon_pt.size(), false)")
 
-    # apply SFs and ScaRe
-    df = run_muon_sf(df, is_data, run_syst=run_systematics)
+    # apply ScaRe
+    df = run_muon_scare(df, is_data, run_syst=run_systematics)
     mu_cols += ["pt_no_corr"]
     df = df.Define("Muon_pt_no_corr", "Muon_pt")
 

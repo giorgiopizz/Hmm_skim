@@ -32,51 +32,60 @@ def load_cpp_utils(module_folder, data_folder, year, is_data=False):
     ROOT.gInterpreter.Declare(line)
 
 
-def run_muon_sf(df, is_data=False, run_syst=True):
+def run_muon_sf(df, year, is_data=False, run_syst=True):
+    pt_mins = {
+        "2024": 10,
+        "2023": 15,
+    }
+    pt_min = pt_mins[year]
+    pt_min_trigger = 26
     if not is_data:
         for mu_idx in [1, 2]:
             df = df.Define(
                 f"weight_sf_mu{mu_idx}_id",
-                f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "nominal"}})',
+                f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > {pt_min} ? mu{mu_idx}_pt : {pt_min}, "nominal"}})',
             )
             if run_syst:
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_id_up",
-                    f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "systup"}})',
+                    f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > {pt_min} ? mu{mu_idx}_pt : {pt_min}, "systup"}})',
                 )
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_id_down",
-                    f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "systdown"}})',
+                    f'ceval_muon_id->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > {pt_min} ? mu{mu_idx}_pt : {pt_min}, "systdown"}})',
                 )
 
             df = df.Define(
                 f"weight_sf_mu{mu_idx}_iso",
-                f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "nominal"}})',
+                f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > {pt_min} ? mu{mu_idx}_pt : {pt_min}, "nominal"}})',
             )
             if run_syst:
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_iso_up",
-                    f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "systup"}})',
+                    f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > {pt_min} ? mu{mu_idx}_pt : {pt_min}, "systup"}})',
                 )
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_iso_down",
-                    f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 15 ? mu{mu_idx}_pt : 15, "systdown"}})',
+                    f'ceval_muon_iso->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > {pt_min} ? mu{mu_idx}_pt : {pt_min}, "systdown"}})',
                 )
 
             df = df.Define(
                 f"weight_sf_mu{mu_idx}_trg",
-                f'ceval_muon_trg->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 26 ? mu{mu_idx}_pt : 26, "nominal"}})',
+                f'ceval_muon_trg->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > {pt_min_trigger} ? mu{mu_idx}_pt : {pt_min_trigger}, "nominal"}})',
             )
             if run_syst:
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_trg_up",
-                    f'ceval_muon_trg->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 26 ? mu{mu_idx}_pt : 26, "systup"}})',
+                    f'ceval_muon_trg->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > {pt_min_trigger} ? mu{mu_idx}_pt : {pt_min_trigger}, "systup"}})',
                 )
                 df = df.Define(
                     f"weight_sf_mu{mu_idx}_trg_down",
-                    f'ceval_muon_trg->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > 26 ? mu{mu_idx}_pt : 26, "systdown"}})',
+                    f'ceval_muon_trg->evaluate({{mu{mu_idx}_eta, mu{mu_idx}_pt > {pt_min_trigger} ? mu{mu_idx}_pt : {pt_min_trigger}, "systdown"}})',
                 )
+    return df
 
+
+def run_muon_scare(df, is_data=False, run_syst=True):
     # run ScaRe
     for mu_idx in [1, 2]:
         df = df.Define(
@@ -126,5 +135,5 @@ def run_muon_sf(df, is_data=False, run_syst=True):
                 f"mu{mu_idx}_pt_corr",
             )
 
-    # df.Display(["weight_sf_mu1_id", "mu1_pt_scale_up", "mu1_pt_res_up", "mu1_pt"], 10).Print()
+    # df.Display(["mu1_pt_scale_up", "mu1_pt_res_up", "mu1_pt"], 10).Print()
     return df
