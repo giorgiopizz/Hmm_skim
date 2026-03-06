@@ -57,12 +57,59 @@ namespace v15
         return res;
     }
 
+    // for 2024, pt clipping at 30 in 2.0-2.5 eta res correction
     Result_pt_mass
     sf_jec_data(
-        // const std::shared_ptr<const correction::Correction> &cset_jec_l1,
-        // const std::shared_ptr<const correction::Correction> &cset_jec_l2,
-        // const std::shared_ptr<const correction::Correction> &cset_jec_l3,
-        // const std::shared_ptr<const correction::Correction> &cset_jec_l2l3res,
+        const std::shared_ptr<const correction::Correction> &cset_jec_l1,
+        const std::shared_ptr<const correction::Correction> &cset_jec_l2,
+        const std::shared_ptr<const correction::Correction> &cset_jec_l3,
+        const std::shared_ptr<const correction::Correction> &cset_jec_l2l3res,
+        const RVecF &jet_pt,
+        const RVecF &jet_eta,
+        const RVecF &jet_phi,
+        const RVecF &jet_mass,
+        const RVecF &jet_rawFactor,
+        const RVecF &jet_area,
+        const float rho,
+        const int run)
+    {
+        Result_pt_mass res(jet_pt.size());
+        for (size_t i = 0; i < jet_pt.size(); i++)
+        {
+            // workaround for 2024 issue
+            double sf = 1.0;
+
+            double pt_raw = jet_pt[i] * (1.f - jet_rawFactor[i]);
+            double pt_l1 = pt_raw * cset_jec_l1->evaluate({jet_area[i], jet_eta[i], pt_raw, rho});
+
+            double pt_l2 = pt_l1 * cset_jec_l2->evaluate({jet_eta[i], jet_phi[i],
+                                                          pt_l1});
+
+            double pt_l3 = pt_l2 * cset_jec_l3->evaluate({jet_eta[i],
+                                                          pt_l2});
+
+            double pt_for_corr = pt_l3;
+            if (pt_for_corr < 30 && abs(jet_eta[i]) >= 2.0 && abs(jet_eta[i]) <= 2.5)
+                pt_for_corr = 30;
+
+            double pt_l2l3res = pt_l3 * cset_jec_l2l3res->evaluate({(float)run, jet_eta[i], pt_for_corr});
+
+            double sf = pt_l2l3res / pt_raw;
+            if (sf >= 0.f)
+            {
+                res.set(i, jet_pt[i] * (1.f - jet_rawFactor[i]) * sf, jet_mass[i] * (1.f - jet_rawFactor[i]) * sf);
+            }
+            else
+            {
+                res.set(i, jet_pt[i], jet_mass[i]);
+            }
+        }
+        return res;
+    }
+
+    // for 2025
+    Result_pt_mass
+    sf_jec_data(
         const std::shared_ptr<const correction::CompoundCorrection> &cset_jec,
         const RVecF &jet_pt,
         const RVecF &jet_eta,
@@ -77,29 +124,10 @@ namespace v15
 
         for (size_t i = 0; i < jet_pt.size(); i++)
         {
-            // workaround for 2024 issue
 
-            // double pt_l1 = jet_pt[i] * cset_jec_l1->evaluate({jet_area[i], jet_eta[i],
-            //                                                   jet_pt[i] * (1.f - jet_rawFactor[i]),
-            //                                                   rho});
-
-            // double pt_l2 = pt_l1 * cset_jec_l2->evaluate({jet_eta[i], jet_phi[i],
-            //                                               pt_l1});
-
-            // double pt_l3 = pt_l2 * cset_jec_l3->evaluate({jet_eta[i],
-            //                                               pt_l2});
-
-            // double pt_for_corr = pt_l3;
-            // if (pt_for_corr < 30 && abs(jet_eta[i]) >= 2.0 && abs(jet_eta[i]) <= 2.5)
-            //     pt_for_corr = 30;
-
-            // double pt_l2l3res = pt_l3 * cset_jec_l2l3res->evaluate({(float)run, jet_eta[i], pt_for_corr});
-
-            // double sf = pt_l2l3res / (jet_pt[i] * (1.f - jet_rawFactor[i]));
-
-            auto sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
-                                          jet_pt[i] * (1.f - jet_rawFactor[i]),
-                                          rho, jet_phi[i], (float)run});
+            double sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
+                                            jet_pt[i] * (1.f - jet_rawFactor[i]),
+                                            rho, jet_phi[i], (float)run});
 
             if (sf >= 0.f)
             {
@@ -156,16 +184,27 @@ namespace v12
         const RVecF &jet_rawFactor,
         const RVecF &jet_area,
         const float rho,
-        const int run)
+        const int run,
+        const int year)
     {
         Result_pt_mass res(jet_pt.size());
 
         for (size_t i = 0; i < jet_pt.size(); i++)
         {
 
-            auto sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
-                                          jet_pt[i] * (1.f - jet_rawFactor[i]),
-                                          rho, (float)run});
+            double sf = 1.0;
+            if (year == 2023)
+            {
+                sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
+                                         jet_pt[i] * (1.f - jet_rawFactor[i]),
+                                         rho, (float)run});
+            }
+            else
+            {
+                sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
+                                         jet_pt[i] * (1.f - jet_rawFactor[i]),
+                                         rho});
+            }
 
             if (sf >= 0.f)
             {
@@ -260,7 +299,8 @@ std::tuple<Result_pt_mass, Result_pt_mass, Result_pt_mass> sf_jer(
     const RVecF &GenJet_pt,
     const RVecF &GenJet_eta,
     const RVecF &GenJet_phi,
-    const float rho)
+    const float rho,
+    const bool mitigate_horns)
 {
     std::tuple<Result_pt_mass, Result_pt_mass, Result_pt_mass> res = std::make_tuple(Result_pt_mass(jet_pt.size()), Result_pt_mass(jet_pt.size()), Result_pt_mass(jet_pt.size()));
 
@@ -279,7 +319,7 @@ std::tuple<Result_pt_mass, Result_pt_mass, Result_pt_mass> sf_jer(
         auto smear_up = cset_jer_smear->evaluate({jet_pt[i], jet_eta[i], genPt, rho, int(jet_seed), pt_res, cset_jer->evaluate({jet_eta[i], jet_pt[i], "up"})});
 
         // mitigate horns, apply JER to matched genJets only in 2.5-3.0 eta region
-        if (abs(jet_eta[i]) > 2.5 && abs(jet_eta[i]) < 3.0 && iGen >= GenJet_pt.size())
+        if (mitigate_horns && abs(jet_eta[i]) > 2.5 && abs(jet_eta[i]) < 3.0 && iGen >= GenJet_pt.size())
         {
             smear_nom = 1.f;
             smear_down = 1.f;

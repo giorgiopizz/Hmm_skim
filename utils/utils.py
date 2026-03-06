@@ -8,6 +8,10 @@ def get_fw_path():
 base_output_folder = get_fw_path() + "/rootfiles/"
 base_output_folder = "/eos/user/g/gpizzati/hmm_skim/"
 
+base_condor_folder = get_fw_path() + "/condor_jobs/"
+base_condor_folder = "/afs/cern.ch/user/g/gpizzati/Hmm_skim/condor_jobs/"
+
+
 def get_results_folder(tag, year):
     return f"{base_output_folder}/{tag}/{year}/"
 
@@ -60,7 +64,7 @@ def add_dict(d1, d2):
         return tmp
 
 
-def add_dict_iterable(iterable):
+def add_dict_iterable(iterable) -> dict:
     tmp = -99999
     for it in iterable:
         if tmp == -99999:

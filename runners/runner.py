@@ -1,84 +1,85 @@
-import ROOT
+import ROOT  # type: ignore
 import time
 
 import argparse
 import json
-import correctionlib
+import correctionlib  # type: ignore
 import subprocess
 import os
 import sys
+
+from modules.pu import load_cpp_utils as load_pu_utils
+from modules.muon_sf import (
+    run_muon_sf,
+    run_muon_scare,
+    load_cpp_utils as load_muon_sf_utils,
+)
+from modules.jet_id_veto import run_jetid_veto, load_cpp_utils as load_jet_id_utils
+from modules.jet_correction import (
+    run_jme_mc,
+    run_jme_data,
+    load_cpp_utils as load_jec_utils,
+)
+from modules.noise_filters import run_noise_filters
+from modules.btag import run_btag
+from modules.vbf_selector import (
+    run_vbf_selector,
+    load_cpp_utils as load_vbf_selector_utils,
+)
+from modules.fsr_recovery import (
+    run_fsr_recovery,
+    load_cpp_utils as load_fsr_recovery_utils,
+)
+from modules.per_event_mass_res import run_per_event_mass_res
 
 correctionlib.register_pyroot_binding()
 
 ROOT.gROOT.SetBatch(True)
 
 
-argparsese = argparse.ArgumentParser()
-argparsese.add_argument(
-    "--year", type=str, required=True, help="Year of the production"
-)
-argparsese.add_argument(
-    "--debug", action="store_true", help="Run in debug mode (process only one file)"
-)
+def add_dict(d1, d2):
+    if isinstance(d1, dict):
+        d = {}
+        common_keys = set(list(d1.keys())).intersection(list(d2.keys()))
+        for key in common_keys:
+            d[key] = add_dict(d1[key], d2[key])
+        for key in d1:
+            if key in common_keys:
+                continue
+            d[key] = d1[key]
+        for key in d2:
+            if key in common_keys:
+                continue
+            d[key] = d2[key]
+
+        return d
+    elif isinstance(d1, set):
+        return d1.union(d2)
+    elif isinstance(d1, bool):
+        return d1 and d2
+    else:
+        try:
+            tmp = d1 + d2
+        except Exception as e:
+            print("Error adding")
+            print(d1)
+            print(d2)
+            raise Exception("Error adding", d1, d2, e)
+            tmp = d1
+        return tmp
 
 
-args = argparsese.parse_args()
-year = args.year
-DEBUG = args.debug
-
-data_folder = "data/"
-module_folder = "modules/"
-job_folder = "."
-run_systematics = True
-run_systematics = False
-
-if DEBUG:
-    tag = "v1"
-    # # # FIXME comment out
-    data_folder = "../data/"
-    module_folder = "../modules/"
-    condor_folder = f"../condor_jobs/{tag}_{year}/"
-    job_folder = f"{condor_folder}/job_20/"
-    # # job_folder = "../condor_jobs/job_11/"
-    # job_folder = "../condor_jobs/job_0/"
-    job_folder = f"{condor_folder}/job_95/"
-
-
-sys.path.append(data_folder)
-from modules.pu import load_cpp_utils as load_pu_utils  # noqa: E402
-from modules.muon_sf import (
-    run_muon_sf,
-    run_muon_scare,
-    load_cpp_utils as load_muon_sf_utils,
-)  # noqa: E402
-from modules.jet_id_veto import run_jetid_veto, load_cpp_utils as load_jet_id_utils  # noqa: E402
-from modules.jet_correction import (
-    run_jme_mc,
-    run_jme_data,
-    load_cpp_utils as load_jec_utils,
-)
-from modules.noise_filters import run_noise_filters  # noqa: E402
-from modules.btag import run_btag  # noqa: E402
-from modules.vbf_selector import (
-    run_vbf_selector,
-    load_cpp_utils as load_vbf_selector_utils,
-)  # noqa: E402
-from modules.fsr_recovery import (
-    run_fsr_recovery,
-    load_cpp_utils as load_fsr_recovery_utils,
-)  # noqa: E402
+def load_utils(module_folder, data_folder, year, era, is_data):
+    load_pu_utils(module_folder, data_folder, year)
+    load_muon_sf_utils(module_folder, data_folder, year, is_data=is_data)
+    load_fsr_recovery_utils(module_folder)
+    load_jet_id_utils(module_folder, data_folder, year, is_data=is_data)
+    load_jec_utils(module_folder, data_folder, year, era=era, is_data=is_data)
+    load_vbf_selector_utils(module_folder, data_folder, year, is_data=is_data)
+    print("All c++ utils loaded")
 
 
 def process_file(dataset, file, outfile, is_data):
-
-    load_pu_utils(module_folder, data_folder, year)
-    load_muon_sf_utils(module_folder, data_folder, year, is_data=is_data)
-    load_jet_id_utils(module_folder, data_folder, year, is_data=is_data)
-    load_jec_utils(module_folder, data_folder, year, is_data=is_data)
-    load_vbf_selector_utils(module_folder, data_folder, year, is_data=is_data)
-    load_fsr_recovery_utils(module_folder)
-
-    # exit()
 
     df = ROOT.RDataFrame("Events", file)
 
@@ -167,17 +168,21 @@ def process_file(dataset, file, outfile, is_data):
     # Filter trigger matched
     df = df.Define(
         "mu1_trigger_idx",
-        "trg_match_ind(mu1_eta, mu1_phi, TrigObj_id, TrigObj_eta, TrigObj_phi, -99)",
+        "trg_match_ind(mu1_pt, mu1_eta, mu1_phi, TrigObj_id, TrigObj_eta, TrigObj_phi, -99)",
     )
     df = df.Define(
         "mu2_trigger_idx",
-        "trg_match_ind(mu2_eta, mu2_phi, TrigObj_id, TrigObj_eta, TrigObj_phi, mu1_trigger_idx)",
+        "trg_match_ind(mu2_pt, mu2_eta, mu2_phi, TrigObj_id, TrigObj_eta, TrigObj_phi, mu1_trigger_idx)",
     )
     # mu_cols += ["trigger_idx"]
     df = df.Define(
-        "mu_trigger_idx", "mu1_pt > mu2_pt ? mu1_trigger_idx : mu2_trigger_idx"
+        # "mu_trigger_idx", "mu1_pt > mu2_pt ? mu1_trigger_idx : mu2_trigger_idx"
+        "mu_trigger_idx",
+        "mu1_trigger_idx >= 0 ? mu1_trigger_idx : (mu2_trigger_idx >= 0 ? mu2_trigger_idx : -1)",
     )
-    df = df.Filter("mu_trigger_idx >= 0")
+    df = df.Filter(
+        "mu_trigger_idx >= 0 && (mu_trigger_idx == mu1_trigger_idx ? mu1_pt : mu2_pt) > 26"
+    )
 
     df = run_muon_sf(df, year, is_data=is_data, run_syst=run_systematics)
 
@@ -218,6 +223,8 @@ def process_file(dataset, file, outfile, is_data):
         df = df.Redefine(f"mu1_{col}", f"Take(Muon_{col}, Muon_order)[0]")
         df = df.Redefine(f"mu2_{col}", f"Take(Muon_{col}, Muon_order)[1]")
 
+    # Final version of mu1_pt and mu2_pt
+
     df = df.Define(
         "mu1_p4", "ROOT::Math::PtEtaPhiMVector(mu1_pt, mu1_eta, mu1_phi, mu1_mass)"
     )
@@ -225,12 +232,20 @@ def process_file(dataset, file, outfile, is_data):
         "mu2_p4", "ROOT::Math::PtEtaPhiMVector(mu2_pt, mu2_eta, mu2_phi, mu2_mass)"
     )
     df = df.Define("mll", "(mu1_p4 + mu2_p4).M()")
+    df = run_per_event_mass_res(df)
+    columns += ["mll", "per_event_mass_res"]
+
+    df = df.Filter("mu1_pt > 15 && mu2_pt > 15")  # 26 for trigger and 20 for fakes
+
     df = df.Filter("mll > 50 && mll < 200")
+
+    # df.Display(["mu1_pt", "mu2_pt", "mll"], 100).Print()
 
     df = run_jetid_veto(df, year)
 
-    # filter out events with one jet in the veto region
-    df = df.Filter("Sum(Jet_veto) == 0")
+    # FIXME
+    # # filter out events with one jet in the veto region
+    # df = df.Filter("Sum(Jet_veto) == 0")
 
     if is_data:
         df = run_jme_data(df, year)
@@ -243,21 +258,31 @@ def process_file(dataset, file, outfile, is_data):
     )
     df = df.Define(
         "Jet_in_HF",
-        "(abs(Jet_eta) >= 3.0) && (abs(Jet_eta) < 5.0)",
+        "(abs(Jet_eta) >= 3.0) && (abs(Jet_eta) <= 5.0)",
     )
 
-    if year == "2024":
+    # df.Display(["Jet_pt_no_corr", "Jet_pt", "Jet_in_horn", "Jet_in_HF"]).Print()
+
+    if year in ["2025"]:
+        # keep all jets
+        df = df.Define(
+            "Jet_bad",
+            "Jet_pt < 25",
+        )
+    elif year in ["2024"]:
         df = df.Define(
             "Jet_bad",
             "(Jet_pt < 50) && Jet_in_horn",
         )
-    else:
+    elif year in ["2022EE", "2023"]:
         df = df.Define(
             "Jet_bad",
             "(Jet_pt < 50) && (Jet_in_horn || Jet_in_HF)",
         )
 
-    df = df.Define("Jet_good", "Jet_pt > 25 && Jet_tightId && !Jet_veto_or_overlap && !Jet_bad")
+    df = df.Define(
+        "Jet_good", "Jet_pt > 25 && Jet_tightId && !Jet_veto_or_overlap && !Jet_bad"
+    )
 
     jet_cols = [
         "pt",
@@ -268,7 +293,7 @@ def process_file(dataset, file, outfile, is_data):
         "btagPNetCvL",
         "btagPNetQvG",
     ]
-    if year == "2024":
+    if year in ["2024", "2025"]:
         jet_cols += ["btagUParTAK4B"]
     if not is_data:
         jet_cols += [
@@ -312,10 +337,16 @@ def process_file(dataset, file, outfile, is_data):
     # df = df.Filter("Sum(Jet_btagged) == 0")
 
     if not is_data:
-        df = df.Define(
-            "weight_sf_pu",
-            'ceval_pu->evaluate({Pileup_nTrueInt, "nominal"})',
-        )
+        if year != "2025":
+            df = df.Define(
+                "weight_sf_pu",
+                'ceval_pu->evaluate({Pileup_nTrueInt, "nominal"})',
+            )
+        else:
+            df = df.Define(
+                "weight_sf_pu",
+                "1.0",
+            )
         if run_systematics:
             df = df.Define(
                 "weight_sf_pu_up",
@@ -333,14 +364,14 @@ def process_file(dataset, file, outfile, is_data):
             # "LHEScaleWeight",
             # "LHEPdfWeight",
             # "PSWeight",
-            # # gen part
-            # "GenPart_pt",
-            # "GenPart_eta",
-            # "GenPart_phi",
-            # "GenPart_mass",
-            # "GenPart_pdgId",
-            # "GenPart_status",
-            # "GenPart_statusFlags",
+            # gen part
+            "GenPart_pt",
+            "GenPart_eta",
+            "GenPart_phi",
+            "GenPart_mass",
+            "GenPart_pdgId",
+            "GenPart_status",
+            "GenPart_statusFlags",
             # # gen jet
             # "GenJet_pt",
             # "GenJet_eta",
@@ -401,39 +432,127 @@ def process_file(dataset, file, outfile, is_data):
         "sumw": sumw,
         "nevents_before": nevents,
         "nevents_after": nevents_after,
-        "files": [
-            {
-                "file": outfile,
-                "nevents": nevents_after,
-            }
-        ],
     }
     return {dataset: values}
 
 
-with open(f"{job_folder}/input.json") as f:
-    data = json.load(f)
+if __name__ == "__main__":
+    argparsese = argparse.ArgumentParser()
+    argparsese.add_argument(
+        "--year", type=str, required=True, help="Year of the production"
+    )
+    argparsese.add_argument(
+        "--debug", action="store_true", help="Run in debug mode (process only one file)"
+    )
 
+    args = argparsese.parse_args()
+    year = args.year
+    DEBUG = args.debug
 
-out_tmp = data["outfile"]
-if "/eos/" in data["outfile"]:
-    out_tmp = "output.root"
+    data_folder = "data/"
+    module_folder = "modules/"
+    job_folder = "."
+    run_systematics = True
+    run_systematics = False
 
-if not DEBUG:
-    result = process_file(data["dataset"], data["file"][:], out_tmp, data["is_data"])
-else:
-    result = process_file(data["dataset"], data["file"][:1], out_tmp, data["is_data"])
+    if DEBUG:
+        from utils.utils import base_condor_folder
 
-if not DEBUG:
+        tag = "v1"
+        # # # FIXME comment out
+        data_folder = "../data/"
+        module_folder = "../modules/"
+        condor_folder = f"{base_condor_folder}/{tag}_{year}/"
+        job_folder = f"{condor_folder}/job_13/"
+        # # job_folder = f"{condor_folder}/job_11/"
+        # job_folder = f"{condor_folder}/job_0/"
+        job_folder = f"{condor_folder}/job_95/"
+        # job_folder = f"{condor_folder}/job_193/"
+
+    with open(f"{job_folder}/input.json") as f:
+        data = json.load(f)
+
+    load_utils(
+        module_folder, data_folder, year, era=data.get("era"), is_data=data["is_data"]
+    )
+
+    if not DEBUG:
+        ROOT.gErrorIgnoreLevel = ROOT.kFatal
+
+    start = time.time()
+
+    out_tmp = data["outfile"]
     if "/eos/" in data["outfile"]:
-        cmd = f"xrdcp {out_tmp} root://eosuser.cern.ch/{data['outfile']}"
-        # run cmd, if any error, remove output.root and raise exception
-        proc = subprocess.run(cmd, shell=True)
-        if proc.returncode != 0:
-            os.remove(out_tmp)
-            raise RuntimeError(f"Failed to copy output file: {cmd}")
+        out_tmp = "output.root"
 
-    os.remove(out_tmp)
+    results = {}
+    out_files = []
+    max_files = 10 if DEBUG else None
+    if not DEBUG:
+        for i_file, replicas in enumerate(data["file"][:max_files]):
+            one_worked = False
+            for replica in replicas:
+                if one_worked:
+                    break
+                try:
+                    out_tmp_i = out_tmp.replace(".root", f"_{i_file}.root")
+                    result = process_file(
+                        data["dataset"], replica, out_tmp_i, data["is_data"]
+                    )
+                    results = add_dict(results, result)
+                    out_files.append(out_tmp_i)
+                    one_worked = True
+                    break
+                except Exception as _:
+                    # # print error stack
+                    # import traceback as tb
+                    print(f"Warning: Error processing file {replica}", file=sys.stderr)
+                    # tb.print_exc()
+                    continue
+            if not one_worked:
+                print(f"Warning: Failed to process file {replicas}", file=sys.stderr)
+                if data["is_data"]:
+                    raise RuntimeError("Error: Cannot fail data!")
+    else:
+        for i_file, replicas in enumerate(data["file"][:max_files]):
+            replica = replicas[0]
+            out_tmp_i = out_tmp.replace(".root", f"_{i_file}.root")
+            result = process_file(data["dataset"], replica, out_tmp_i, data["is_data"])
+            results = add_dict(results, result)
+            out_files.append(out_tmp_i)
+
+    result = results
+
+    end = time.time()
+    print(f"Processing time: {(end - start) / 60:.2f} minutes")
+
+    # if not DEBUG:
+    #     if "/eos/" in data["outfile"]:
+    #         cmd = f"xrdcp -f {out_tmp} root://eosuser.cern.ch/{data['outfile']}"
+    #         # run cmd, if any error, remove output.root and raise exception
+    #         proc = subprocess.run(cmd, shell=True)
+    #         if proc.returncode != 0:
+    #             os.remove(out_tmp)
+    #             raise RuntimeError(f"Failed to copy output file: {cmd}")
+    #     os.remove(out_tmp)
+
+    outfile = data["outfile"]
+    if "/eos/" in data["outfile"]:
+        outfile = f"root://eosuser.cern.ch/{data['outfile']}"
+    if DEBUG:
+        outfile = out_tmp
+
+    cmd = f"hadd -f {outfile} {' '.join(out_files)}"
+
+    proc = subprocess.run(cmd, shell=True)
+    if proc.returncode != 0:
+        for f in out_files:
+            os.remove(f)
+        raise RuntimeError(f"Failed to hadd output files: {cmd}")
+    for f in out_files:
+        os.remove(f)
+
+    print(result)
 
     with open(f"{job_folder}/output.json", "w") as f:
         json.dump(result, f, indent=2)

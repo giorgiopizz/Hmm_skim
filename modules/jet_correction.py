@@ -1,7 +1,7 @@
 import ROOT
 
 
-def load_cpp_utils(module_folder, data_folder, year, is_data=False):
+def load_cpp_utils(module_folder, data_folder, year, era=None, is_data=False):
     JERC_FILE = f"{data_folder}/{year}/jet_jerc.json.gz"
     JERSMEAR_FILE = f"{data_folder}/{year}/jer_smear.json.gz"
     JER_JET_ALGO = "AK4PFPuppi"
@@ -12,6 +12,10 @@ def load_cpp_utils(module_folder, data_folder, year, is_data=False):
     ROOT.gInterpreter.Declare(line)
 
     jerc_tags = {
+        "2025": {
+            "data": "Winter25Prompt25_V3_DATA",
+            "mc": ["Winter25Prompt25_V3_MC", "Summer23BPixPrompt23_RunD_JRV1_MC"],
+        },
         "2024": {
             "data": "Summer24Prompt24_V2_DATA",
             "mc": ["Summer24Prompt24_V2_MC", "Summer23BPixPrompt23_RunD_JRV1_MC"],
@@ -20,18 +24,37 @@ def load_cpp_utils(module_folder, data_folder, year, is_data=False):
             "data": "Summer23Prompt23_V2_DATA",
             "mc": ["Summer23Prompt23_V2_MC", "Summer23Prompt23_RunCv1234_JRV1_MC"],
         },
+        "2022EE": {
+            "data": {
+                "E": "Summer22EE_22Sep2023_RunE_V3_DATA",
+                "F": "Summer22EE_22Sep2023_RunF_V3_DATA",
+                "G": "Summer22EE_22Sep2023_RunG_V3_DATA",
+            },
+            "mc": ["Summer22EE_22Sep2023_V3_MC", "Summer22EE_22Sep2023_JRV1_MC"],
+        },
     }
 
     if is_data:
         JEC_TAG = jerc_tags[year]["data"]
         line = f"""
         auto cset_jerc = correction::CorrectionSet::from_file("{JERC_FILE}");
-        auto cset_jec = cset_jerc->compound().at("{JEC_TAG}_L1L2L3Res_{JER_JET_ALGO}");
-        // auto cset_jec_l1 = cset_jerc->at("{JEC_TAG}_L1FastJet_{JER_JET_ALGO}");
-        // auto cset_jec_l2 = cset_jerc->at("{JEC_TAG}_L2Relative_{JER_JET_ALGO}");
-        // auto cset_jec_l3 = cset_jerc->at("{JEC_TAG}_L3Absolute_{JER_JET_ALGO}");
-        // auto cset_jec_l2l3res = cset_jerc->at("{JEC_TAG}_L2L3Residual_{JER_JET_ALGO}");
         """
+        if isinstance(JEC_TAG, dict):
+            line += f"""
+                auto cset_jec = cset_jerc->compound().at("{JEC_TAG[era]}_L1L2L3Res_{JER_JET_ALGO}");
+                """
+        else:
+            if year in ["2024"]:
+                line += f"""
+                auto cset_jec_l1 = cset_jerc->at("{JEC_TAG}_L1FastJet_{JER_JET_ALGO}");
+                auto cset_jec_l2 = cset_jerc->at("{JEC_TAG}_L2Relative_{JER_JET_ALGO}");
+                auto cset_jec_l3 = cset_jerc->at("{JEC_TAG}_L3Absolute_{JER_JET_ALGO}");
+                auto cset_jec_l2l3res = cset_jerc->at("{JEC_TAG}_L2L3Residual_{JER_JET_ALGO}");
+                """
+            else:
+                line += f"""
+                auto cset_jec = cset_jerc->compound().at("{JEC_TAG}_L1L2L3Res_{JER_JET_ALGO}");
+                """
     else:
         JEC_TAG, JER_TAG = jerc_tags[year]["mc"]
         line = f"""
@@ -59,16 +82,21 @@ def run_jme_data(df, year):
     df = df.Define("Jet_pt_no_corr", "Jet_pt")
     df = df.Define("Jet_mass_no_corr", "Jet_mass")
 
-    if year == "2024":
+    if year in ["2025"]:
         df = df.Define(
             "Jet_pt_mass_jec",
-            # "sf_jec_data(cset_jec_l1, cset_jec_l2, cset_jec_l3, cset_jec_l2l3res, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
             "v15::sf_jec_data(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
         )
-    if year == "2023":
+    elif year in ["2024"]:
         df = df.Define(
             "Jet_pt_mass_jec",
-            "v12::sf_jec_data(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
+            "v15::sf_jec_data(cset_jec_l1, cset_jec_l2, cset_jec_l3, cset_jec_l2l3res, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
+        )
+    else:
+        year_maps = {"2023": 2023, "2022EE": 2022}
+        df = df.Define(
+            "Jet_pt_mass_jec",
+            f"v12::sf_jec_data(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run, {year_maps[year]})",
         )
     df = df.Define("Jet_pt_jec", "Jet_pt_mass_jec.get_pt()")
     df = df.Define("Jet_mass_jec", "Jet_pt_mass_jec.get_mass()")
@@ -88,12 +116,12 @@ def run_jme_mc(df, year, run_syst=True):
     df = df.Define("Jet_pt_no_corr", "Jet_pt")
     df = df.Define("Jet_mass_no_corr", "Jet_mass")
 
-    if year == "2024":
+    if year in ["2024", "2025"]:
         df = df.Define(
             "Jet_pt_mass_jec",
             "v15::sf_jec(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll)",
         )
-    if year == "2023":
+    else:
         df = df.Define(
             "Jet_pt_mass_jec",
             "v12::sf_jec(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll)",
@@ -106,9 +134,13 @@ def run_jme_mc(df, year, run_syst=True):
         "(run << 20) + (luminosityBlock << 10) + event + int(Jet_eta.size()) > 0 ? Jet_eta[0]/0.01 : 0",
     )
 
+    if year in ["2025"]:
+        mitigate_horns = "false"
+    else:
+        mitigate_horns = "true"
     df = df.Define(
         "Jet_pt_mass_jec_jer",
-        "sf_jer(cset_jer, cset_jer_ptres, ceval_jersmear, Jet_pt_jec, Jet_eta, Jet_phi, Jet_mass_jec, Jet_genJetIdx, Jet_seed, GenJet_pt, GenJet_eta, GenJet_phi, Rho_fixedGridRhoFastjetAll)",
+        f"sf_jer(cset_jer, cset_jer_ptres, ceval_jersmear, Jet_pt_jec, Jet_eta, Jet_phi, Jet_mass_jec, Jet_genJetIdx, Jet_seed, GenJet_pt, GenJet_eta, GenJet_phi, Rho_fixedGridRhoFastjetAll, {mitigate_horns})",
     )
 
     df = df.Redefine("Jet_pt", "std::get<0>(Jet_pt_mass_jec_jer).get_pt()")

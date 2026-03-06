@@ -34,8 +34,10 @@ def load_cpp_utils(module_folder, data_folder, year, is_data=False):
 
 def run_muon_sf(df, year, is_data=False, run_syst=True):
     pt_mins = {
+        "2025": 10,
         "2024": 10,
         "2023": 15,
+        "2022EE": 15,
     }
     pt_min = pt_mins[year]
     pt_min_trigger = 26

@@ -25,7 +25,7 @@ std::tuple<int, int, float, float> GetVBFJetIndices(const RVecF &Jet_pt, const R
             const float mjj = (jets[i] + jets[j]).M();
             const float detajj = std::abs(jets[i].Eta() - jets[j].Eta());
 
-            if (!((mjj > 400) && (detajj > 2.5) && (jets[i].Pt() > 35) && (jets[j].Pt() > 25)))
+            if (!((mjj > 400) && (detajj > 2.5) && (std::max(jets[i].Pt(), jets[j].Pt()) > 35)))
                 continue;
 
             if (mjj > maxMjj)

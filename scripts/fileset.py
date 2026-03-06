@@ -14,8 +14,8 @@ def fileset(files, max_cores=2):
 
     rucio_client = rucio_utils.get_rucio_client()
     xrootd_sites_map = rucio_utils.get_xrootd_sites_map()
-    # good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE", "US"]
-    good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE"]
+    good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE", "US"]
+    # good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE"]
     default_kwargs = dict(
         allowlist_sites=[],
         blocklist_sites=[
@@ -96,7 +96,13 @@ if __name__ == "__main__":
         files[sample] = {
             "files": [],
         }
+        for key in Samples[sample]:
+            if key in ["nanoAOD", "is_data"]:
+                continue
+            files[sample][key] = Samples[sample][key]
+
         files[sample]["is_data"] = Samples[sample].get("is_data", False)
+
         for key in Samples[sample]:
             if key == "nanoAOD":
                 files[sample]["query"] = Samples[sample][key]

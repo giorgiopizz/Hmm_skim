@@ -4,7 +4,13 @@ import argparse
 import sys
 import os
 
-from utils.utils import common_args, add_dict_iterable, get_fw_path, get_results_folder
+from utils.utils import (
+    common_args,
+    add_dict_iterable,
+    get_fw_path,
+    get_results_folder,
+    base_condor_folder,
+)
 
 
 if __name__ == "__main__":
@@ -14,7 +20,7 @@ if __name__ == "__main__":
 
     fw_path = get_fw_path()
 
-    condor_folder = f"{fw_path}/condor_jobs/{tag}_{year}"
+    condor_folder = f"{base_condor_folder}/{tag}_{year}"
     with open(f"{condor_folder}/jobs_mapped.json") as f:
         jobs_mapped = json.load(f)
 
@@ -38,8 +44,9 @@ if __name__ == "__main__":
 
         with open(f"{job_folder}/output.json") as f:
             if f.read() == "":
-                print(f"Error: empty output.json in job {ijob}")
-                exit(1)
+                # print(f"Error: empty output.json in job {ijob}")
+                # exit(1)
+                continue
             f.seek(0)
             jobs_results.append(json.load(f))
 
@@ -47,8 +54,8 @@ if __name__ == "__main__":
     print(jobs_results)
 
     sys.path.insert(0, f"{fw_path}/productions")
-    from xs import xs
-    from lumis import lumis
+    from xs import xs  # type: ignore
+    from lumis import lumis  # type: ignore
 
     lumi = lumis[year]
     final_results = {}

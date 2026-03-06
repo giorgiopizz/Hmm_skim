@@ -1,29 +1,44 @@
 #!/usr/bin/env python3
 import subprocess
-import ROOT
+import ROOT  # type: ignore
 import os
-from utils.utils import get_fw_path, common_args, get_results_folder
+from utils.utils import get_fw_path, common_args, get_results_folder, base_condor_folder
 import gzip
 import json
 import sys
-
+from typing import TypedDict
+import random
 
 ROOT.gROOT.SetBatch(True)
 
 
-def chunksize_per_dataset(year, dataset):
-    if year == "2024":
-        nevents_per_chunk = 100_000_000
+class FileWithReplicas(TypedDict):
+    path: list[str]
+    nevents: int
+
+
+class DatasetFiles(TypedDict):
+    files: list[FileWithReplicas]
+    is_data: bool
+
+
+def chunksize_per_dataset(year: str, dataset: str) -> int:
+    if year in ["2024", "2025"]:
+        nevents_per_chunk = 50_000_000
         if "to2Mu" in dataset:
             nevents_per_chunk = 5_000_000
     else:
-        nevents_per_chunk = 10_000_000
+        nevents_per_chunk = 20_000_000
+        if "Muon" in dataset:
+            nevents_per_chunk = 50_000_000
         if "to2Mu" in dataset:
-            nevents_per_chunk = 5_000_000
+            nevents_per_chunk = 10_000_000
     return nevents_per_chunk
 
 
-def merge_files(files, nevents_per_chunk=10_000_000):
+def merge_files(
+    files: list[FileWithReplicas], nevents_per_chunk: int = 10_000_000
+) -> list[list[str]]:
     merged_files = []
     cur_files = []
     cur_nevents = 0
@@ -33,14 +48,35 @@ def merge_files(files, nevents_per_chunk=10_000_000):
             merged_files.append(cur_files)
             cur_files = []
             cur_nevents = 0
-        # random.Random(i_random).shuffle(fileinfo["path"])
+        random.Random(i_random).shuffle(f["path"])
+        fpath = f["path"]
         i_random += 1
-        fpath = f["path"][0]
         cur_files.append(fpath)
         cur_nevents += f["nevents"]
     if len(cur_files) > 0:
         merged_files.append(cur_files)
     return merged_files
+
+
+def map_files_to_job(
+    year: str, fileset_data: dict[str, DatasetFiles]
+) -> tuple[dict[str, list[list[str]]], dict[str, dict[str, str | bool]]]:
+    datasets_metadata = {}
+    datasets_files = {}
+
+    for dataset in fileset_data:
+        nevents_per_chunk = chunksize_per_dataset(year, dataset)
+        datasets_files[dataset] = merge_files(
+            fileset_data[dataset]["files"][:], nevents_per_chunk
+        )[:]
+
+        datasets_metadata[dataset] = {
+            "is_data": fileset_data[dataset]["is_data"],
+        }
+        for key in fileset_data[dataset]:
+            if key not in ["files", "is_data"]:
+                datasets_metadata[dataset][key] = fileset_data[dataset][key]
+    return datasets_files, datasets_metadata
 
 
 if __name__ == "__main__":
@@ -52,7 +88,12 @@ if __name__ == "__main__":
     data_folder = f"{fw_path}/data/{year}/"
 
     results_folder = get_results_folder(tag, year)
-    os.makedirs(results_folder, exist_ok=False)
+    if os.path.exists(results_folder):
+        # warning in yellow
+        print(
+            f"\033[93mWarning: results folder {results_folder} already exists. Files will be overwritten.\033[0m"
+        )
+    os.makedirs(results_folder, exist_ok=True)
 
     with gzip.open(f"{data_folder}/fileset.json.gz", "rb") as f:
         fileset_data = json.loads(f.read().decode("utf-8"))
@@ -61,27 +102,18 @@ if __name__ == "__main__":
     fw_path = get_fw_path()
     prod_folder = f"{fw_path}/productions/{year}/"
     sys.path.insert(0, prod_folder)
-    from samples import Samples
+    from samples import Samples  # type: ignore
 
+    # overwrite fileset_data with only enabled samples
     fileset_data_new = {}
     for sample in Samples:
         fileset_data_new[sample] = fileset_data[sample]
     fileset_data = fileset_data_new
 
-    is_datas = {}
-    datasets_files = {}
-
-    i_random = 0
-    for dataset in fileset_data:
-        nevents_per_chunk = chunksize_per_dataset(year, dataset)
-        datasets_files[dataset] = merge_files(
-            fileset_data[dataset]["files"][:], nevents_per_chunk
-        )[:]
-
-        is_datas[dataset] = fileset_data[dataset].get("is_data", False)
+    datasets_files, datasets_metadata = map_files_to_job(year, fileset_data)
 
     ijob = 0
-    condor_folder = f"{fw_path}/condor_jobs/{tag}_{year}/"
+    condor_folder = f"{base_condor_folder}/{tag}_{year}/"
     if os.path.exists(condor_folder):
         subprocess.run(f"rm -rf {condor_folder}", shell=True)
 
@@ -122,16 +154,18 @@ if __name__ == "__main__":
                 "dataset": ds,
                 "ifile": ifile,
                 "outfile": outfile,
-                "is_data": is_datas[ds],
+                "is_data": datasets_metadata[ds]["is_data"],
             }
             with open(f"{condor_folder}/job_{ijob}/input.json", "w") as f:
+                job_dict = {
+                    "dataset": ds,
+                    "file": file,
+                    "outfile": outfile,
+                }
+                for key in datasets_metadata[ds]:
+                    job_dict[key] = datasets_metadata[ds][key]
                 json.dump(
-                    {
-                        "dataset": ds,
-                        "file": file,
-                        "outfile": outfile,
-                        "is_data": is_datas[ds],
-                    },
+                    job_dict,
                     f,
                     indent=2,
                 )
@@ -151,3 +185,6 @@ if __name__ == "__main__":
 
     with open(f"{condor_folder}/submit.jdl", "w") as f:
         f.write(submit_jdl_content)
+
+    cmd = f"cd {condor_folder} && condor_submit submit.jdl && cd -"
+    print(cmd)

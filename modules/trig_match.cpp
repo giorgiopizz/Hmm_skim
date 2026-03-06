@@ -20,6 +20,7 @@ int FindMatching(const LorentzVectorM &target_p4, const RVecLV &ref_p4, const fl
 
 // trigger matching
 UInt_t trg_match_ind(
+    Float_t pt,
     Float_t eta,
     Float_t phi,
     ROOT::VecOps::RVec<UShort_t> &TrigObj_id,
@@ -28,6 +29,10 @@ UInt_t trg_match_ind(
     Int_t match1)
 {
     Int_t index = -99;
+    if (pt < 26)
+    {
+        return index;
+    }
     Float_t dRmin = 1000;
     Float_t dR, dEta, dPhi;
     for (int i = 0; i < TrigObj_id.size(); i++)

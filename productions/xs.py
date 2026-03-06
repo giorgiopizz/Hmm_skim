@@ -1,17 +1,21 @@
 # all in pb
 xs = {}
 
+DY_from_NLO_to_NNLO = 2094.2 / (5378.0 / 3 + 1017.0 / 3 + 385.5 / 3)
+
 xs["DYto2L_M_50_amcatnloFXFX"] = 2094.2 * 3
-xs["DYto2L_M_50_0J_amcatnloFXFX"] = 5378.0
-xs["DYto2L_M_50_1J_amcatnloFXFX"] = 1017.0
-xs["DYto2L_M_50_2J_amcatnloFXFX"] = 385.5
+xs["DYto2L_M_50_0J_amcatnloFXFX"] = 5378.0 * DY_from_NLO_to_NNLO
+xs["DYto2L_M_50_1J_amcatnloFXFX"] = 1017.0 * DY_from_NLO_to_NNLO
+xs["DYto2L_M_50_2J_amcatnloFXFX"] = 385.5 * DY_from_NLO_to_NNLO
 
 for lep in ["E", "Mu", "Tau"]:
     xs[f"DYto2{lep}_M_50_amcatnloFXFX"] = 2094.2
 
-    xs[f"DYto2{lep}_M_50_0J_amcatnloFXFX"] = 5378.0 / 3
-    xs[f"DYto2{lep}_M_50_1J_amcatnloFXFX"] = 1017.0 / 3
-    xs[f"DYto2{lep}_M_50_2J_amcatnloFXFX"] = 385.5 / 3
+    xs[f"DYto2{lep}_M_50_0J_amcatnloFXFX"] = 5378.0 / 3 * DY_from_NLO_to_NNLO
+    xs[f"DYto2{lep}_M_50_1J_amcatnloFXFX"] = 1017.0 / 3 * DY_from_NLO_to_NNLO
+    xs[f"DYto2{lep}_M_50_2J_amcatnloFXFX"] = 385.5 / 3 * DY_from_NLO_to_NNLO
+
+print("\n\nNew xs for DY", xs)
 
 for lep in ["E", "Mu", "Tau"]:
     xs[f"WTo{lep}Nu_amcatnloFXFX"] = 9013.3 + 12128.4

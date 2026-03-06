@@ -2,7 +2,7 @@ import ROOT
 
 
 def load_cpp_utils(module_folder, data_folder, year, is_data=False):
-    if year == "2024":
+    if year in ["2024", "2025"]:
         JETID_FILE = f"{data_folder}/{year}/jetid.json.gz"
         line = f"""
         auto cset_jetid = correction::CorrectionSet::from_file("{JETID_FILE}");
@@ -10,8 +10,10 @@ def load_cpp_utils(module_folder, data_folder, year, is_data=False):
         ROOT.gInterpreter.Declare(line)
 
     jetveto_tags = {
+        "2025": "Winter25Prompt25_RunCDEFG_V1",
         "2024": "Summer24Prompt24_RunBCDEFGHI_V1",
         "2023": "Summer23Prompt23_RunC_V1",
+        "2022EE": "Summer22EE_23Sep2023_RunEFG_V1",
     }
 
     JETVETO_FILE = f"{data_folder}/{year}/jetvetomaps.json.gz"
@@ -33,7 +35,7 @@ def load_cpp_utils(module_folder, data_folder, year, is_data=False):
 
 def run_jetid_veto(df, year):
 
-    if year == "2024":
+    if year in ["2024", "2025"]:
         df = df.Define(
             "Jet_id_tight_tightlep",
             "v15::jet_id(cset_jetid, Jet_eta, Jet_chHEF, Jet_neHEF, Jet_chEmEF, Jet_neEmEF, Jet_muEF, Jet_chMultiplicity, Jet_neMultiplicity)",

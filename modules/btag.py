@@ -1,12 +1,20 @@
 def run_btag(df, year):
     btag_WPs = {
+        "2025": {
+            "col": "btagUParTAK4B",
+            "M": 0.1272,  # FIXME
+        },
         "2024": {
             "col": "btagUParTAK4B",
-            "M": 0.1272,  # DeepCSV medium WP
+            "M": 0.1272,
         },
         "2023": {
             "col": "btagPNetB",
             "M": 0.1917,  # DeepCSV medium WP
+        },
+        "2022EE": {
+            "col": "btagPNetB",
+            "M": 0.2605,
         },
     }
     wps = ["M"]
