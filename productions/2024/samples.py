@@ -69,18 +69,15 @@ Samples["Muon1_Run2024I_v2"] = {
     "is_data": True,
 }
 
-## DY samples, probably the only ones we can use for now
-## for the future DYto2Mu should be jet binned, the others may not
-
-# Samples["DYto2E_M_50_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2E-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v4/NANOAODSIM"
-# }
-# Samples["DYto2Mu_M_50_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2Mu-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v6/NANOAODSIM"
-# }
-# Samples["DYto2Tau_M_50_amcatnloFXFX"] = {
-#     "nanoAOD": "/DYto2Tau-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v7/NANOAODSIM"
-# }
+Samples["DYto2E_M_50_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2E-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v4/NANOAODSIM"
+}
+Samples["DYto2Mu_M_50_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2Mu-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v6/NANOAODSIM"
+}
+Samples["DYto2Tau_M_50_amcatnloFXFX"] = {
+    "nanoAOD": "/DYto2Tau-2Jets_Bin-MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v7/NANOAODSIM"
+}
 
 ## DY samples jet and flavor binned
 # DY 2E
@@ -254,27 +251,26 @@ Samples["GluGluHto2Mu"] = {
     "nanoAOD": "/GluGluH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
 }
 
-# # VH
-# Samples["WplusHto2Mu"] = {
-#     "nanoAOD": "/WplusH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
-# }
-# Samples["WminusHto2Mu"] = {
-#     "nanoAOD": "/WminusH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
-# }
-# Samples["ZHto2Mu"] = {
-#     "nanoAOD": "/ZH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
-# }
-
-# # FIXME should be TTHto2Mu
-# Samples["ttZHto2Mu"] = {
-#     "nanoAOD": "/TTH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
-# }
-
-# ggZH
-# FIXME missing sample
+# VH
+Samples["WplusHto2Mu"] = {
+    "nanoAOD": "/WplusH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
+}
+Samples["WminusHto2Mu"] = {
+    "nanoAOD": "/WminusH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
+}
+Samples["ZHto2Mu"] = {
+    "nanoAOD": "/ZH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powhegMINLO-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
+}
+# # ggZH
+# # FIXME missing sample
 # Samples["ggZHto2Mu"] = {
 #     "nanoAOD": "/GluGluZH-Zto2L-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v3/NANOAODSIM"
 # }
+
+Samples["TTHto2Mu"] = {
+    "nanoAOD": "/TTH-Hto2Mu_Par-M-125_TuneCP5_13p6TeV_powheg-pythia8/RunIII2024Summer24NanoAODv15-150X_mcRun3_2024_realistic_v2-v2/NANOAODSIM"
+}
+
 
 # bbH
 # FIXME missing sample

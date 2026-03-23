@@ -121,7 +121,7 @@ def _get_pfn_for_site(path, rules):
             if m := re.match(rule, path):
                 grs = m.groups()
                 for i in range(len(grs)):
-                    pfn = pfn.replace(f"${i+1}", grs[i])
+                    pfn = pfn.replace(f"${i + 1}", grs[i])
                 return pfn
     else:
         # not adding any slash as the path usually starts with it
@@ -189,6 +189,14 @@ def get_dataset_files_replicas(
     outsites = []
     outfiles = []
     for filedata in client.list_replicas([{"scope": scope, "name": dataset}]):
+
+        # debug_file = False
+        # if (
+        #     filedata["name"]
+        #     == "/store/mc/Run3Summer22NanoAODv12/WminusH_Hto2Mu_M-125_TuneCP5_13p6TeV_powheg-minlo-pythia8/NANOAODSIM/130X_mcRun3_2022_realistic_v5-v2/2540000/10c07185-9ba8-4c8f-b15c-e5063a1352e8.root"
+        # ):
+        #     debug_file = True
+
         outfile = []
         outsite = []
         rses = filedata["rses"]
@@ -221,6 +229,8 @@ def get_dataset_files_replicas(
                 possible_sites = list(
                     filter(lambda key: key not in blocklist_sites, possible_sites)
                 )
+            # if debug_file:
+            #     print("possible sites for file", filedata["name"], possible_sites)
 
             if len(possible_sites) == 0 and not partial_allowed:
                 raise Exception(f"No SITE available for file {filedata['name']}")
@@ -237,6 +247,14 @@ def get_dataset_files_replicas(
                             or filedata["states"][site] != "AVAILABLE"
                             or site not in sites_xrootd_prefix
                         ):
+                            # if debug_file:
+                            #     print("skipping", site, "for bugged file")
+                            #     print(
+                            #         meta["type"] != "DISK",
+                            #         meta["volatile"],
+                            #         filedata["states"][site] != "AVAILABLE",
+                            #         site not in sites_xrootd_prefix,
+                            #     )
                             continue
                         outfile.append(
                             _get_pfn_for_site(
@@ -245,6 +263,9 @@ def get_dataset_files_replicas(
                         )
                         outsite.append(site)
                         found = True
+                    # else:
+                    #     if debug_file:
+                    #         print("no regex", site, "for bugged file")
                 else:
                     # Just take the first one
                     # Check actual availability

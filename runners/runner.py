@@ -1,5 +1,7 @@
+#!/usr/bin/env python
 import ROOT  # type: ignore
 import time
+from tqdm import tqdm
 
 import argparse
 import json
@@ -7,7 +9,6 @@ import correctionlib  # type: ignore
 import subprocess
 import os
 import sys
-
 from modules.pu import load_cpp_utils as load_pu_utils
 from modules.muon_sf import (
     run_muon_sf,
@@ -125,7 +126,7 @@ def process_file(dataset, file, outfile, is_data):
     # pfIsoId >= 2 : Loose
     df = df.Define(
         "good_mu",
-        "Muon_pt > 10 && abs(Muon_eta) < 2.4 && Muon_mediumId && Muon_pfIsoId >= 2",  # FIXME
+        "Muon_pt > 10 && abs(Muon_eta) < 2.4 && Muon_mediumId && Muon_pfIsoId >= 2",
     )
 
     df = df.Filter("Muon_pt[good_mu].size() == 2")
@@ -261,8 +262,6 @@ def process_file(dataset, file, outfile, is_data):
         "(abs(Jet_eta) >= 3.0) && (abs(Jet_eta) <= 5.0)",
     )
 
-    # df.Display(["Jet_pt_no_corr", "Jet_pt", "Jet_in_horn", "Jet_in_HF"]).Print()
-
     if year in ["2025"]:
         # keep all jets
         df = df.Define(
@@ -274,14 +273,19 @@ def process_file(dataset, file, outfile, is_data):
             "Jet_bad",
             "(Jet_pt < 50) && Jet_in_horn",
         )
-    elif year in ["2022EE", "2023"]:
+    else:
+        # 22, 23
         df = df.Define(
             "Jet_bad",
             "(Jet_pt < 50) && (Jet_in_horn || Jet_in_HF)",
         )
 
     df = df.Define(
-        "Jet_good", "Jet_pt > 25 && Jet_tightId && !Jet_veto_or_overlap && !Jet_bad"
+        "Jet_good",
+        "Jet_pt > 25 && Jet_tightId && !Jet_veto_or_overlap && !Jet_bad",
+        # # FIXME keeping all jets, even bad ones
+        # "Jet_good",
+        # "Jet_pt > 25 && Jet_tightId && !Jet_veto_or_overlap",
     )
 
     jet_cols = [
@@ -292,6 +296,7 @@ def process_file(dataset, file, outfile, is_data):
         "btagPNetB",
         "btagPNetCvL",
         "btagPNetQvG",
+        "bad",  # FIXME
     ]
     if year in ["2024", "2025"]:
         jet_cols += ["btagUParTAK4B"]
@@ -327,8 +332,9 @@ def process_file(dataset, file, outfile, is_data):
     for col in jet_cols:
         df = df.Redefine(f"Jet_{col}", f"Take(Jet_{col}[Jet_good], Jet_order)")
 
-    df = run_vbf_selector(df, year)
-    columns += ["vbf_jet_idx1", "vbf_jet_idx2", "vbf_mjj", "vbf_detajj"]
+    # FIXME not running VBF selector
+    # df = run_vbf_selector(df, year)
+    # columns += ["vbf_jet_idx1", "vbf_jet_idx2", "vbf_mjj", "vbf_detajj"]
 
     df = run_btag(df, year)
     jet_cols += ["btag_M"]
@@ -337,16 +343,10 @@ def process_file(dataset, file, outfile, is_data):
     # df = df.Filter("Sum(Jet_btagged) == 0")
 
     if not is_data:
-        if year != "2025":
-            df = df.Define(
-                "weight_sf_pu",
-                'ceval_pu->evaluate({Pileup_nTrueInt, "nominal"})',
-            )
-        else:
-            df = df.Define(
-                "weight_sf_pu",
-                "1.0",
-            )
+        df = df.Define(
+            "weight_sf_pu",
+            'ceval_pu->evaluate({Pileup_nTrueInt, "nominal"})',
+        )
         if run_systematics:
             df = df.Define(
                 "weight_sf_pu_up",
@@ -360,10 +360,6 @@ def process_file(dataset, file, outfile, is_data):
     if not is_data:
         columns += [
             "genWeight",
-            # # theory weights
-            # "LHEScaleWeight",
-            # "LHEPdfWeight",
-            # "PSWeight",
             # gen part
             "GenPart_pt",
             "GenPart_eta",
@@ -372,12 +368,21 @@ def process_file(dataset, file, outfile, is_data):
             "GenPart_pdgId",
             "GenPart_status",
             "GenPart_statusFlags",
+            "GenPart_genPartIdxMother",
             # # gen jet
             # "GenJet_pt",
             # "GenJet_eta",
             # "GenJet_phi",
             # "GenJet_mass",
         ]
+
+        if run_systematics:
+            columns += [
+                # theory weights
+                "LHEScaleWeight",
+                "LHEPdfWeight",
+                "PSWeight",
+            ]
 
         columns += ["weight_sf_pu"]
         columns += ["weight_trigger_SF"]
@@ -441,14 +446,21 @@ if __name__ == "__main__":
     argparsese.add_argument(
         "--year", type=str, required=True, help="Year of the production"
     )
+
+    # options for debug
     argparsese.add_argument(
         "--debug", action="store_true", help="Run in debug mode (process only one file)"
+    )
+    argparsese.add_argument(
+        "--tag", type=str, default="v2", help="Tag of the production"
+    )
+    argparsese.add_argument(
+        "--run-on-mc", action="store_true", help="Run on MC samples"
     )
 
     args = argparsese.parse_args()
     year = args.year
     DEBUG = args.debug
-
     data_folder = "data/"
     module_folder = "modules/"
     job_folder = "."
@@ -458,15 +470,32 @@ if __name__ == "__main__":
     if DEBUG:
         from utils.utils import base_condor_folder
 
-        tag = "v1"
+        tag = args.tag
+        run_on_mc = args.run_on_mc
+
         # # # FIXME comment out
         data_folder = "../data/"
         module_folder = "../modules/"
         condor_folder = f"{base_condor_folder}/{tag}_{year}/"
-        job_folder = f"{condor_folder}/job_13/"
+        with open(f"{condor_folder}/jobs_mapped.json") as f:
+            jobs_mapped = json.load(f)
+
+        for ijob in jobs_mapped:
+            if run_on_mc:
+                if (
+                    "DYto2L" in jobs_mapped[ijob]["dataset"]
+                    or "DYto2Mu" in jobs_mapped[ijob]["dataset"]
+                ):
+                    break
+            else:
+                if "Muon" in jobs_mapped[ijob]["dataset"]:
+                    break
+
+        job_folder = f"{condor_folder}/job_{ijob}/"
+
         # # job_folder = f"{condor_folder}/job_11/"
         # job_folder = f"{condor_folder}/job_0/"
-        job_folder = f"{condor_folder}/job_95/"
+        # job_folder = f"{condor_folder}/job_0/"
         # job_folder = f"{condor_folder}/job_193/"
 
     with open(f"{job_folder}/input.json") as f:
@@ -514,13 +543,14 @@ if __name__ == "__main__":
                 if data["is_data"]:
                     raise RuntimeError("Error: Cannot fail data!")
     else:
+        pbar = tqdm(total=len(data["file"][:max_files]), desc="Processing files")
         for i_file, replicas in enumerate(data["file"][:max_files]):
             replica = replicas[0]
             out_tmp_i = out_tmp.replace(".root", f"_{i_file}.root")
             result = process_file(data["dataset"], replica, out_tmp_i, data["is_data"])
             results = add_dict(results, result)
             out_files.append(out_tmp_i)
-
+            pbar.update(1)
     result = results
 
     end = time.time()

@@ -36,7 +36,8 @@ if __name__ == "__main__":
                 print(
                     f"\033[91mError: output.json not found in job {ijob} for dataset {input_data['dataset']}\033[0m"
                 )
-                exit(1)
+                continue
+                # exit(1)# FIXME
             else:
                 # for mc missing it's ok
                 print(f"\033[93mWarning: output.json not found in job {ijob}\033[0m")

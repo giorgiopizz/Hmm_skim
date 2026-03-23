@@ -1,5 +1,8 @@
 import os
 
+import argcomplete
+import sys
+
 
 def get_fw_path():
     return os.environ["FW_PATH"]
@@ -16,7 +19,7 @@ def get_results_folder(tag, year):
     return f"{base_output_folder}/{tag}/{year}/"
 
 
-def common_args(additional_args: list[dict] = []):
+def common_args(additional_args: list[dict] = [], register_argcomplete: bool = True):
     import argparse
 
     parser = argparse.ArgumentParser()
@@ -27,9 +30,46 @@ def common_args(additional_args: list[dict] = []):
     for arg in additional_args:
         arg_name = arg.pop("name")
         parser.add_argument(arg_name, **arg)
+    if register_argcomplete:
+        argcomplete.autocomplete(parser)
     args = parser.parse_args()
     print(f"Running with year={args.year} and tag={args.tag}")
     return args
+
+
+def print_p(text, *args, type="info"):
+    if type == "info":
+        print(f"\033[94mInfo: {text}\033[0m", *args)
+    elif type == "warning":
+        print(f"\033[93mWarning: {text}\033[0m", *args, file=sys.stderr)
+    elif type == "error":
+        print(f"\033[91mError: {text}\033[0m", *args, file=sys.stderr)
+    else:
+        print(text)
+
+
+def parse_samples_datasets(year):
+    sys.path.insert(0, f"{get_fw_path()}/productions/{year}/")
+    from datasets import datasets
+    from samples import Samples
+
+    active_samples = set()
+    for ds in datasets:
+        for ds_single in datasets[ds]["names"]:
+            if ds_single not in Samples:
+                print_p(f"Dataset {ds_single} not found in samples.py", type="error")
+                raise Exception(f"Dataset {ds_single} not found in samples.py")
+            active_samples.add(ds_single)
+    # check inactive samples
+    all_samples = list(Samples.keys())
+    for sample in all_samples:
+        if sample not in active_samples:
+            print_p(
+                f"Sample {sample} is not active in any dataset, deactivating",
+                type="warning",
+            )
+            del Samples[sample]
+    return datasets, Samples
 
 
 def add_dict(d1, d2):
@@ -72,3 +112,26 @@ def add_dict_iterable(iterable) -> dict:
         else:
             tmp = add_dict(tmp, it)
     return tmp
+
+
+cmap_petroff = [
+    "#5790fc",
+    "#f89c20",
+    "#e42536",
+    "#964a8b",
+    "#9c9ca1",
+    "#7a21dd",
+]
+
+cmap_pastel = [
+    "#A1C9F4",
+    "#FFB482",
+    "#8DE5A1",
+    "#FF9F9B",
+    "#D0BBFF",
+    "#DEBB9B",
+    "#FAB0E4",
+    "#CFCFCF",
+    "#FFFEA3",
+    "#B9F2F0",
+]

@@ -94,7 +94,7 @@ namespace v15
 
             double pt_l2l3res = pt_l3 * cset_jec_l2l3res->evaluate({(float)run, jet_eta[i], pt_for_corr});
 
-            double sf = pt_l2l3res / pt_raw;
+            sf = pt_l2l3res / pt_raw;
             if (sf >= 0.f)
             {
                 res.set(i, jet_pt[i] * (1.f - jet_rawFactor[i]) * sf, jet_mass[i] * (1.f - jet_rawFactor[i]) * sf);
@@ -153,15 +153,27 @@ namespace v12
         const RVecF &jet_mass,
         const RVecF &jet_rawFactor,
         const RVecF &jet_area,
-        const float rho)
+        const float rho,
+        const bool takes_run)
     {
         Result_pt_mass res(jet_pt.size());
 
         for (size_t i = 0; i < jet_pt.size(); i++)
         {
-            auto sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
-                                          jet_pt[i] * (1.f - jet_rawFactor[i]),
-                                          rho});
+            double sf = 1.0;
+            if (takes_run)
+            {
+                sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
+                                         jet_pt[i] * (1.f - jet_rawFactor[i]),
+                                         rho, jet_phi[i]});
+            }
+            else
+            {
+                sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
+                                         jet_pt[i] * (1.f - jet_rawFactor[i]),
+                                         rho});
+            }
+
             if (sf >= 0.f)
             {
                 res.set(i, jet_pt[i] * (1.f - jet_rawFactor[i]) * sf, jet_mass[i] * (1.f - jet_rawFactor[i]) * sf);
@@ -185,7 +197,8 @@ namespace v12
         const RVecF &jet_area,
         const float rho,
         const int run,
-        const int year)
+        const bool takes_run,
+        const bool takes_phi)
     {
         Result_pt_mass res(jet_pt.size());
 
@@ -193,7 +206,13 @@ namespace v12
         {
 
             double sf = 1.0;
-            if (year == 2023)
+            if (takes_run && takes_phi)
+            {
+                sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
+                                         jet_pt[i] * (1.f - jet_rawFactor[i]),
+                                         rho, jet_phi[i], (float)run});
+            }
+            else if (takes_run)
             {
                 sf = cset_jec->evaluate({jet_area[i], jet_eta[i],
                                          jet_pt[i] * (1.f - jet_rawFactor[i]),

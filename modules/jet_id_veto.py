@@ -12,8 +12,10 @@ def load_cpp_utils(module_folder, data_folder, year, is_data=False):
     jetveto_tags = {
         "2025": "Winter25Prompt25_RunCDEFG_V1",
         "2024": "Summer24Prompt24_RunBCDEFGHI_V1",
+        "2023BPix": "Summer23BPixPrompt23_RunD_V1",
         "2023": "Summer23Prompt23_RunC_V1",
         "2022EE": "Summer22EE_23Sep2023_RunEFG_V1",
+        "2022": "Summer22_23Sep2023_RunCD_V1",
     }
 
     JETVETO_FILE = f"{data_folder}/{year}/jetvetomaps.json.gz"

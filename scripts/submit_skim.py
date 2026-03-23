@@ -2,7 +2,13 @@
 import subprocess
 import ROOT  # type: ignore
 import os
-from utils.utils import get_fw_path, common_args, get_results_folder, base_condor_folder
+from utils.utils import (
+    get_fw_path,
+    common_args,
+    get_results_folder,
+    base_condor_folder,
+    parse_samples_datasets,
+)
 import gzip
 import json
 import sys
@@ -24,9 +30,9 @@ class DatasetFiles(TypedDict):
 
 def chunksize_per_dataset(year: str, dataset: str) -> int:
     if year in ["2024", "2025"]:
-        nevents_per_chunk = 50_000_000
+        nevents_per_chunk = 25_000_000
         if "to2Mu" in dataset:
-            nevents_per_chunk = 5_000_000
+            nevents_per_chunk = 10_000_000
     else:
         nevents_per_chunk = 20_000_000
         if "Muon" in dataset:
@@ -100,13 +106,12 @@ if __name__ == "__main__":
 
     # get only enabled samples
     fw_path = get_fw_path()
-    prod_folder = f"{fw_path}/productions/{year}/"
-    sys.path.insert(0, prod_folder)
-    from samples import Samples  # type: ignore
+
+    datasets, samples = parse_samples_datasets(year)
 
     # overwrite fileset_data with only enabled samples
     fileset_data_new = {}
-    for sample in Samples:
+    for sample in samples:
         fileset_data_new[sample] = fileset_data[sample]
     fileset_data = fileset_data_new
 

@@ -20,6 +20,10 @@ def load_cpp_utils(module_folder, data_folder, year, era=None, is_data=False):
             "data": "Summer24Prompt24_V2_DATA",
             "mc": ["Summer24Prompt24_V2_MC", "Summer23BPixPrompt23_RunD_JRV1_MC"],
         },
+        "2023BPix": {
+            "data": "Summer23BPixPrompt23_V3_DATA",
+            "mc": ["Summer23BPixPrompt23_V3_MC", "Summer23BPixPrompt23_RunD_JRV1_MC"],
+        },
         "2023": {
             "data": "Summer23Prompt23_V2_DATA",
             "mc": ["Summer23Prompt23_V2_MC", "Summer23Prompt23_RunCv1234_JRV1_MC"],
@@ -31,6 +35,10 @@ def load_cpp_utils(module_folder, data_folder, year, era=None, is_data=False):
                 "G": "Summer22EE_22Sep2023_RunG_V3_DATA",
             },
             "mc": ["Summer22EE_22Sep2023_V3_MC", "Summer22EE_22Sep2023_JRV1_MC"],
+        },
+        "2022": {
+            "data": "Summer22_22Sep2023_RunCD_V3_DATA",
+            "mc": ["Summer22_22Sep2023_V3_MC", "Summer22_22Sep2023_JRV1_MC"],
         },
     }
 
@@ -93,10 +101,17 @@ def run_jme_data(df, year):
             "v15::sf_jec_data(cset_jec_l1, cset_jec_l2, cset_jec_l3, cset_jec_l2l3res, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run)",
         )
     else:
-        year_maps = {"2023": 2023, "2022EE": 2022}
+        takes_run = "false"
+        takes_phi = "false"
+        if year in ["2023"]:
+            takes_run = "true"
+        if year in ["2023BPix"]:
+            takes_run = "true"
+            takes_phi = "true"
+
         df = df.Define(
             "Jet_pt_mass_jec",
-            f"v12::sf_jec_data(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run, {year_maps[year]})",
+            f"v12::sf_jec_data(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, run, {takes_run}, {takes_phi})",
         )
     df = df.Define("Jet_pt_jec", "Jet_pt_mass_jec.get_pt()")
     df = df.Define("Jet_mass_jec", "Jet_pt_mass_jec.get_mass()")
@@ -122,9 +137,12 @@ def run_jme_mc(df, year, run_syst=True):
             "v15::sf_jec(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll)",
         )
     else:
+        takes_phi = "false"
+        if year in ["2023BPix"]:
+            takes_phi = "true"
         df = df.Define(
             "Jet_pt_mass_jec",
-            "v12::sf_jec(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll)",
+            f"v12::sf_jec(cset_jec, Jet_pt, Jet_eta, Jet_phi, Jet_mass, Jet_rawFactor, Jet_area, Rho_fixedGridRhoFastjetAll, {takes_phi})",
         )
     df = df.Define("Jet_pt_jec", "Jet_pt_mass_jec.get_pt()")
     df = df.Define("Jet_mass_jec", "Jet_pt_mass_jec.get_mass()")

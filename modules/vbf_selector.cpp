@@ -1,3 +1,4 @@
+using RVecF = ROOT::VecOps::RVec<Float_t>;
 
 std::tuple<int, int, float, float> GetVBFJetIndices(const RVecF &Jet_pt, const RVecF &Jet_eta,
                                                     const RVecF &Jet_phi, const RVecF &Jet_mass)

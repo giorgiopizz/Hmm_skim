@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-import subprocess
-import json
-from utils.utils import get_fw_path
-import sys
+from utils.utils import parse_samples_datasets
 import argparse
 
 if __name__ == "__main__":
@@ -13,24 +10,10 @@ if __name__ == "__main__":
     args = parser.parse_args()
     year = args.year
 
-    fw_path = get_fw_path()
+    datasets, samples = parse_samples_datasets(year)
 
-    prod_folder = f"{fw_path}/productions/{year}/"
-    sys.path.insert(0, prod_folder)
-    from samples import Samples
-
-    files = {}
-    for key in Samples:
-        dataset = Samples[key]["nanoAOD"]
-        cmd = f'dasgoclient --query="file dataset={dataset}" --limit=1 --format=json'
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True)
-        dataset_info = json.loads(result.stdout)
-        print(dataset)
-        try:
-            file = dataset_info["data"][0]["file"][0]["name"]
-        except Exception as e:
-            # print in red error message
-            print(f"\033[91mError getting file for dataset {dataset}\033[0m")
-            continue
-
-        files[key] = file
+    print("Active samples")
+    for dataset in datasets:
+        print(f"Dataset {dataset}:")
+        for sample in datasets[dataset]["names"]:
+            print(f"\t{sample}")

@@ -14,7 +14,7 @@ def fileset(files, max_cores=2):
 
     rucio_client = rucio_utils.get_rucio_client()
     xrootd_sites_map = rucio_utils.get_xrootd_sites_map()
-    good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE", "US"]
+    good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE", "US", "RU", "HU"]
     # good_sites = ["IT", "FR", "BE", "CH", "UK", "ES", "DE"]
     default_kwargs = dict(
         allowlist_sites=[],

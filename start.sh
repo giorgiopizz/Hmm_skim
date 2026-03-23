@@ -15,3 +15,8 @@ export PYTHONPATH=${FW_PATH}:$PYTHONPATH
 
 chmod +x ${FW_PATH}/scripts/*.py
 export PATH=${FW_PATH}/scripts/:$PATH
+export PATH=${FW_PATH}/runners/:$PATH
+
+eval "$(register-python-argcomplete submit_skim.py)"
+eval "$(register-python-argcomplete check_jobs.py)"
+eval "$(register-python-argcomplete merge_skim.py)"

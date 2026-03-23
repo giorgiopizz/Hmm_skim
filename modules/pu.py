@@ -19,6 +19,10 @@ def load_cpp_utils(module_folder, data_folder, year):
             "file": "puWeights_BCDEFGHI.json.gz",
             "json": "Collisions24_BCDEFGHI_goldenJSON",
         },
+        "2023BPix": {
+            "file": "puWeights.json.gz",
+            "json": "Collisions2023_369803_370790_eraD_GoldenJson",
+        },
         "2023": {
             "file": "puWeights.json.gz",
             "json": "Collisions2023_366403_369802_eraBC_GoldenJson",
@@ -27,14 +31,20 @@ def load_cpp_utils(module_folder, data_folder, year):
             "file": "puWeights.json.gz",
             "json": "Collisions2022_359022_362760_eraEFG_GoldenJson",
         },
+        "2022": {
+            "file": "puWeights.json.gz",
+            "json": "Collisions2022_355100_357900_eraBCD_GoldenJson",
+        },
     }
 
-    pu_file = f"{data_folder}/{year}/{pu_keys[year]['file']}"
+    _year = year
+    if year == "2025":
+        _year = "2024"
+
+    pu_file = f"{data_folder}/{_year}/{pu_keys[year]['file']}"
     pu_json = pu_keys[year]["json"]
 
     golden_file = golden_files[year]
-
-    skip_pu = year == "2025"
 
     line = f"""
     #include "{module_folder}/trig_match.cpp"
@@ -44,10 +54,9 @@ def load_cpp_utils(module_folder, data_folder, year):
     auto lumi_filter = LumiFilter("{data_folder}/{year}/{golden_file}");
     """
 
-    if not skip_pu:
-        line += f"""
+    line += f"""
     auto cset_pu = correction::CorrectionSet::from_file("{pu_file}");
     auto ceval_pu = cset_pu->at("{pu_json}");
-        """
+    """
 
     ROOT.gInterpreter.Declare(line)

@@ -5,6 +5,7 @@ def load_cpp_utils(module_folder, data_folder, year, is_data=False):
     MUON_SF_FILE = f"{data_folder}/{year}/muon_Z.json.gz"
     MUON_ID_TAG = "NUM_MediumID_DEN_TrackerMuons"
     MUON_ISO_TAG = "NUM_LoosePFIso_DEN_MediumID"
+    MUON_ISO_TAG = "NUM_MediumPFIso_DEN_MediumID"  # FIXME
     MUON_TRG_TAG = "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"
 
     # # FIXME
@@ -36,8 +37,10 @@ def run_muon_sf(df, year, is_data=False, run_syst=True):
     pt_mins = {
         "2025": 10,
         "2024": 10,
+        "2023BPix": 15,
         "2023": 15,
         "2022EE": 15,
+        "2022": 15,
     }
     pt_min = pt_mins[year]
     pt_min_trigger = 26

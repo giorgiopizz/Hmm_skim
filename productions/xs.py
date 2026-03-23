@@ -19,6 +19,7 @@ print("\n\nNew xs for DY", xs)
 
 for lep in ["E", "Mu", "Tau"]:
     xs[f"WTo{lep}Nu_amcatnloFXFX"] = 9013.3 + 12128.4
+
 xs["WToLNu_amcatnloFXFX"] = (9013.3 + 12128.4) * 3
 
 xs["WToLNu_0J_amcatnloFXFX"] = 55760.0
@@ -28,6 +29,8 @@ xs["WToLNu_2J_amcatnloFXFX"] = 3532.0
 xs["TTto2L2Nu"] = 923.6 * (1 - 0.6741) * (1 - 0.6741)
 xs["TTto4Q"] = 923.6 * 0.6741 * 0.6741
 xs["TTtoLNu2Q"] = 923.6 * 0.6741 * (1 - 0.6741) * 2
+
+xs["TTto2L2Nu"] = 98.99  # From Filippo
 
 xs["WWto2L2Nu_powheg"] = 11.79
 xs["WWtoLNu2Q_powheg"] = 15.87
