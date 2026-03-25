@@ -6,4 +6,6 @@ special_start.sh
 productions/*/fileset.json
 spritz_env/**
 tests/**
+analysis/plots_*
+analysis/ntuples_*
 *.root

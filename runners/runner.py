@@ -472,6 +472,10 @@ if __name__ == "__main__":
 
         tag = args.tag
         run_on_mc = args.run_on_mc
+        if run_on_mc:
+            print("Running on MC samples")
+        else:
+            print("Running on data samples")
 
         # # # FIXME comment out
         data_folder = "../data/"
@@ -514,9 +518,34 @@ if __name__ == "__main__":
     if "/eos/" in data["outfile"]:
         out_tmp = "output.root"
 
+    # def wrapper(dataset, replicas, out_tmp, is_data):
+    #     one_worked = False
+    #     result = {}
+    #     for replica in replicas:
+    #         if one_worked:
+    #             break
+    #         try:
+    #             out_tmp_i = out_tmp.replace(".root", f"_{i_file}.root")
+    #             result = process_file(
+    #                 dataset, replica, out_tmp_i, is_data
+    #             )
+    #             one_worked = True
+    #             break
+    #         except Exception as _:
+    #             # # print error stack
+    #             # import traceback as tb
+    #             print(f"Warning: Error processing file {replica}", file=sys.stderr)
+    #             # tb.print_exc()
+    #             continue
+    #     if not one_worked:
+    #         print(f"Warning: Failed to process file {replicas}", file=sys.stderr)
+    #         if is_data:
+    #             raise RuntimeError("Error: Cannot fail data!")
+    #     return result, out_tmp_i
+
     results = {}
     out_files = []
-    max_files = 10 if DEBUG else None
+    max_files = None if DEBUG else None
     if not DEBUG:
         for i_file, replicas in enumerate(data["file"][:max_files]):
             one_worked = False
@@ -544,13 +573,35 @@ if __name__ == "__main__":
                     raise RuntimeError("Error: Cannot fail data!")
     else:
         pbar = tqdm(total=len(data["file"][:max_files]), desc="Processing files")
-        for i_file, replicas in enumerate(data["file"][:max_files]):
-            replica = replicas[0]
-            out_tmp_i = out_tmp.replace(".root", f"_{i_file}.root")
-            result = process_file(data["dataset"], replica, out_tmp_i, data["is_data"])
-            results = add_dict(results, result)
-            out_files.append(out_tmp_i)
-            pbar.update(1)
+        import concurrent.futures
+
+        with concurrent.futures.ProcessPoolExecutor(max_workers=18) as executor:
+            tasks = []
+            for i_file, replicas in enumerate(data["file"][:max_files]):
+                replica = replicas[0]
+                out_tmp_i = out_tmp.replace(".root", f"_{i_file}.root")
+                tasks.append(
+                    (
+                        out_tmp_i,
+                        executor.submit(
+                            process_file,
+                            data["dataset"],
+                            replica,
+                            out_tmp_i,
+                            data["is_data"],
+                        ),
+                    )
+                )
+
+            concurrent.futures.wait([task for _, task in tasks])
+
+            for _task in tasks:
+                out_tmp_i, task = _task
+                result = task.result()
+                results = add_dict(results, result)
+                out_files.append(out_tmp_i)
+                pbar.update(1)
+
     result = results
 
     end = time.time()

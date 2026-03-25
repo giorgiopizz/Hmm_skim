@@ -5,7 +5,7 @@ def load_cpp_utils(module_folder, data_folder, year, is_data=False):
     MUON_SF_FILE = f"{data_folder}/{year}/muon_Z.json.gz"
     MUON_ID_TAG = "NUM_MediumID_DEN_TrackerMuons"
     MUON_ISO_TAG = "NUM_LoosePFIso_DEN_MediumID"
-    MUON_ISO_TAG = "NUM_MediumPFIso_DEN_MediumID"  # FIXME
+    # MUON_ISO_TAG = "NUM_MediumPFIso_DEN_MediumID"  # FIXME
     MUON_TRG_TAG = "NUM_IsoMu24_DEN_CutBasedIdMedium_and_PFIsoMedium"
 
     # # FIXME
